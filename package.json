@@ -8,7 +8,8 @@
     "start": "ts-node src/index.ts",
     "service:start": "cross-env FOREVER_ROOT=./forever forever start service.json",
     "service:stop": "cross-env FOREVER_ROOT=./forever forever stop retrobot",
-    "test:memory": "ts-node src/test_memory.ts"
+    "test:memory": "ts-node src/test_memory.ts",
+    "test:scenes": "ts-node src/scenes/__tests__/emerald.test.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

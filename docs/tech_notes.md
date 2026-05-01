@@ -299,12 +299,55 @@ emscripten::function("retro_get_memory_size", &retro_get_memory_size);
 
 These are already declared in `libretro.h` and implemented by the mGBA core — we just need to expose them through the bindings.
 
-## 10. Open Items
+## 10. Milestone 2: Scene Detector + Memory Map Config ✅ (Completed 2025-05-01)
 
-1. **Exact EWRAM addresses** — build the decomp or use runtime address resolution to get precise offsets for `gBattleTypeFlags`, `gPlayerParty`, etc.
+### Files Created
+
+| File | Purpose |
+|---|---|
+| `config/emerald_memory_map.json` | All resolved memory addresses + constants (scene detection, party data) |
+| `src/scenes.ts` | `Scene` enum (7 values), `SceneDetector` interface, WRAM read helpers (`readU8/U16/U32`), battle state constants |
+| `src/scenes/emerald.ts` | `EmeraldSceneDetector` class — detection logic from tech_notes.md §2 |
+| `src/scenes/__tests__/emerald.test.ts` | 24 synthetic WRAM tests + optional live ROM test |
+
+### Scene Detection Logic (Emerald)
+
+```
+gBattleTypeFlags == 0  →  OVERWORLD
+  (TEXTBOX detection deferred — requires IWRAM access for gTextFlags)
+
+gBattleTypeFlags != 0  →  in battle, check comm state:
+  STATE_BEFORE_ACTION_CHOSEN        → BATTLE_FIGHT
+  STATE_WAIT_ACTION_CHOSEN:
+    B_ACTION_USE_MOVE              → BATTLE_MOVE_SELECT
+    B_ACTION_USE_ITEM              → BATTLE_BAG_POCKET
+    B_ACTION_SWITCH                → BATTLE_PKMN_SWITCH
+    B_ACTION_RUN / NONE            → BATTLE_FIGHT (no sub-menu)
+  STATE_WAIT_ACTION_CASE_CHOSEN    → (same sub-menu resolution as above)
+  STATE_WAIT_ACTION_CONFIRMED*     → BATTLE_FIGHT (animating)
+  anything else                    → UNKNOWN
+```
+
+### Test Results
+
+```
+yarn test:scenes  →  24 passed, 0 failed
+```
+
+All synthetic WRAM tests pass. Live ROM test path available (`yarn test:scenes <rom.gba>`).
+
+### Design Decisions
+- **TEXTBOX is not yet distinguishable from OVERWORLD.** Both map to `Scene.OVERWORLD` because `gTextFlags` lives in IWRAM (not accessible via `RETRO_MEMORY_SYSTEM_RAM`). The text box layout from M3 will be shown alongside D-pad controls in overworld mode.
+- **`EmeraldSceneDetector` exposes `isTrainerBattle()` and `isDoubleBattle()`** as utility methods for the layout generator (M3/M5) to hide Run button or adjust layout.
+- **The detector uses absolute GBA addresses** (`0x02022fec` etc.) and the `readU8/U16/U32` helpers subtract `EWRAM_BASE` (`0x02000000`) to get offsets into the WRAM buffer.
+
+## 11. Open Items
+
+1. ~~**Exact EWRAM addresses** — build the decomp or use runtime address resolution to get precise offsets for `gBattleTypeFlags`, `gPlayerParty`, etc.~~ ✅ Done — all scene detection addresses resolved and validated.
 2. **IWRAM access** — verify if mGBA exposes IWRAM via RETRO_MEMORY_SYSTEM_RAM (id=2) or if we need `SET_MEMORY_MAPS` for `gTextFlags` / `gBattleMainFunc` access
-3. **Move/Item name lookup tables** — need to generate `emerald_lookups.json` from the decomp's data files:
+3. **Move/Item name lookup tables** — need to generate `emerald_lookups.json` from the decomp's data files (→ Milestone 3):
    - Move names: `data/text/move_names.h` or `src/data/move_names.h`
    - Item names: similar pattern
    - Species names: `data/text/species_names.h` or equivalent
 4. **Bag pocket pointer traversal** — the `itemSlots` pointer in `BagPocket` points to dynamically allocated memory. Need to verify how to follow this from EWRAM at runtime
+5. **gPlayerParty** — address resolved (`0x020244ec`) but not yet wired into the detector. Will be used in M3 for reading move names/PP and party Pokémon names
