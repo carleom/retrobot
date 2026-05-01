@@ -353,13 +353,16 @@ These items are intentionally deferred to later milestones:
 - **`EmeraldSceneDetector` exposes `isTrainerBattle()` and `isDoubleBattle()`** as utility methods for the layout generator (M3/M5) to hide Run button or adjust layout.
 - **The detector uses absolute GBA addresses** (`0x02022fec` etc.) and the `readU8/U16/U32` helpers subtract `EWRAM_BASE` (`0x02000000`) to get offsets into the WRAM buffer.
 
-## 11. Open Items
+## 12. Milestone 3: Lookup Tables + Dynamic Layout Generator (Completed 2025-05-01)
 
-1. ~~**Exact EWRAM addresses** — build the decomp or use runtime address resolution to get precise offsets for `gBattleTypeFlags`, `gPlayerParty`, etc.~~ ✅ Done — all scene detection addresses resolved and validated.
-2. **IWRAM access** — verify if mGBA exposes IWRAM via RETRO_MEMORY_SYSTEM_RAM (id=2) or if we need `SET_MEMORY_MAPS` for `gTextFlags` / `gBattleMainFunc` access
-3. **Move/Item name lookup tables** — need to generate `emerald_lookups.json` from the decomp's data files (→ Milestone 3):
-   - Move names: `data/text/move_names.h` or `src/data/move_names.h`
-   - Item names: similar pattern
-   - Species names: `data/text/species_names.h` or equivalent
-4. **Bag pocket pointer traversal** — the `itemSlots` pointer in `BagPocket` points to dynamically allocated memory. Need to verify how to follow this from EWRAM at runtime
-5. **gPlayerParty** — address resolved (`0x020244ec`) but not yet wired into the detector. Will be used in M3 for reading move names/PP and party Pokémon names
+See M3 details in the PRD and test results via `yarn test:layouts` (10 synthetic + live ROM, all passing).
+
+Files: `config/emerald_lookups.json` (355 moves, 377 items, 412 species), `src/layouts.ts` (layout generator with 6 scene layouts), `src/layouts/__tests__/emerald_layouts.test.ts`.
+
+## 13. Open Items
+
+1. ~~**Exact EWRAM addresses**~~ ✅
+2. **IWRAM access** — for `gTextFlags` / `gBattleMainFunc` access
+3. ~~**Move/Item name lookup tables**~~ ✅ — `emerald_lookups.json` generated
+4. ~~**Bag pocket pointer traversal**~~ ✅ — direct SaveBlock1 addresses, XOR decryption
+5. ~~**gPlayerParty**~~ ✅ — wired into layout generator
