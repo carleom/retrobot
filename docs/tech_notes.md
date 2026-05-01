@@ -336,6 +336,18 @@ yarn test:scenes  →  24 passed, 0 failed
 
 All synthetic WRAM tests pass. Live ROM test path available (`yarn test:scenes <rom.gba>`).
 
+### Deferred from M2
+
+These items are intentionally deferred to later milestones:
+
+| Item | Reason | Target |
+|---|---|---|
+| TEXTBOX detection | `gTextFlags` is in IWRAM, not accessible via `retro_get_memory_data(2)`. May need `SET_MEMORY_MAPS` or alternative approach. | M3+ (workaround: show text/A/B buttons alongside overworld D-pad) |
+| Party data reading | `gPlayerParty` address (`0x020244ec`) resolved but not yet wired into a reader. Needed for move names, PP, party Pokemon lists. | M3 (Dynamic Layout Generator) |
+| Bag data reading | Bag pocket structs involve pointer traversal (`itemSlots` pointer in `BagPocket`). Addresses not yet fully mapped. | M3 (Dynamic Layout Generator) |
+| Move/Item/Species lookup tables | Need to generate `emerald_lookups.json` from decomp data files (move_names.h, item_names.h, species_names.h). | M3 (Lookup Tables) |
+| IWRAM access investigation | Whether mGBA exposes IWRAM (0x03000000) via a custom memory ID or `SET_MEMORY_MAPS`. Needed for TEXTBOX detection and potentially other state. | M4+ |
+
 ### Design Decisions
 - **TEXTBOX is not yet distinguishable from OVERWORLD.** Both map to `Scene.OVERWORLD` because `gTextFlags` lives in IWRAM (not accessible via `RETRO_MEMORY_SYSTEM_RAM`). The text box layout from M3 will be shown alongside D-pad controls in overworld mode.
 - **`EmeraldSceneDetector` exposes `isTrainerBattle()` and `isDoubleBattle()`** as utility methods for the layout generator (M3/M5) to hide Run button or adjust layout.
