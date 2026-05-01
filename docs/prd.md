@@ -522,6 +522,30 @@ User clicks "Potion"
 **Acceptance:** Worker can return a 256KB WRAM buffer alongside frame data. A test script reads
 a known address and prints the value.
 
+**✅ COMPLETED (2025-05-01)**
+
+Implementation summary:
+- `bindings.cxx`: Added `simple_retro_get_memory_data` / `simple_retro_get_memory_size` wrappers
+  in the `EMSCRIPTEN_BINDINGS` block (L131-132). These delegate to the libretro C API.
+- `worker.ts`: Exposed `RETRO_MEMORY_SYSTEM_RAM = 2` constant. After frame execution, calls
+  `core.retro_get_memory_data(2)` and `core.retro_get_memory_size(2)`, slices the heap buffer to
+  create a WRAM `Uint8Array`, and includes it in the output alongside `av_info`, `frames`, and `state`.
+  The WRAM buffer is registered for Piscina zero-copy transfer via `transferableSymbol`.
+- `workerInterface.ts`: Passes `wram` through from worker results to callers.
+- `emulate.ts`: Propagates `wram` through the emulation pipeline; returned alongside state and
+  recording in the final result.
+- `Makefile`: Each core target links `bindings.cxx` with the core's `.a` archive. All three cores
+  (mgba, quicknes, snes9x2010) rebuilt via `make all`.
+- `src/test_memory.ts`: Standalone acceptance test. Loads a GBA ROM into the mGBA core, runs 600
+  frames to reach title screen, calls `retro_get_memory_data(2)` / `retro_get_memory_size(2)`,
+  validates WRAM size == 262144 bytes (256KB), prints a hex dump of the first 64 bytes, scans
+  for printable ASCII strings, and optionally reads user-specified addresses as u8/u16/u32.
+  Run via `yarn test:memory <path-to-rom> [addr1_hex] ...`.
+
+Key implementation note: This Emscripten build (MODULARIZE=1) exposes `_malloc` directly on the
+Module object rather than under an `asm` sub-object. Code that uses `core.asm.malloc` (e.g.
+`util.ts`'s `loadRom`) may need to be updated to `core._malloc`.
+
 ### Milestone 2: Scene Detector + Memory Map Config
 
 **Files:** `src/scenes.ts`, `src/scenes/emerald.ts`, `config/emerald_memory_map.json`

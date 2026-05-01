@@ -193,39 +193,56 @@ and stored in the generated `pokeemerald.map` file (not present in the repo with
 2. Runtime introspection: read EWRAM, search for known patterns (species names, move names, etc.) to build an address map dynamically
 3. Use documented addresses from the pokeemerald community
 
-For Milestone 1, we can use a **runtime address resolver** approach:
-- On first game load, scan EWRAM for known marker patterns
-- Verify against expected struct layouts
-- Cache the resolved addresses
+For Milestone 1, we built the decomp to get exact addresses:
+1. Cloned `pret/pokeemerald` into `decompiled/pokeemerald/`
+2. Installed devkitPro ARM toolchain (`gba-dev` group via `dkp-pacman`)
+3. Built agbcc (`tools/agbcc/build.sh && ./install.sh ../..`)
+4. Ran `make` → generated `pokeemerald.map` with all symbol addresses
 
-Or we can simply build the decomp to get the `.map` file.
+### Resolved Scene Detection Addresses (Pokémon Emerald USA)
+
+All symbols are in EWRAM, accessible via `retro_get_memory_data(2)`:
+
+| Symbol | Address | Type | Used For |
+|---|---|---|---|
+| `gBattleTypeFlags` | `0x02022fec` | `u32` | Non-zero = in battle |
+| `gActiveBattler` | `0x02024064` | `u8` | Which battler (0-3) is acting |
+| `gChosenActionByBattler` | `0x0202421c` | `u8[4]` | Action each battler chose |
+| `gBattleCommunication` | `0x02024332` | `u8[8]` | Per-battler action state machine |
+
+Addresses confirmed via `yarn test:memory` reading live WRAM from a running Emerald ROM.
 
 ## 7. Retrobot Worker Pipeline Integration
 
-**Current worker output** (`src/worker.ts:258-280`):
+**Final worker output** (`src/worker.ts:267-295`):
 ```typescript
+const wramPtr = core.retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+const wramSize = core.retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+const wram = wramSize > 0
+    ? new Uint8Array(core.HEAPU8.buffer.slice(wramPtr, wramPtr + wramSize))
+    : new Uint8Array(0);
+
 const output = {
     av_info,
     frames,
     state: newState,
+    wram,
     gameHash: incomingGameHash,
     stateHash: newStateHash,
     get [Piscina.transferableSymbol]() {
-        return [newState.buffer, ...frames.map(frame => frame.buffer.buffer)];
+        return [
+            newState.buffer,
+            wram.buffer,
+            ...frames.map(frame => frame.buffer.buffer)
+        ];
     },
     get [Piscina.valueSymbol]() {
-        return { av_info, frames, state: newState, gameHash: incomingGameHash, stateHash: newStateHash };
+        return {
+            av_info, frames, state: newState, wram,
+            gameHash: incomingGameHash, stateHash: newStateHash
+        };
     }
 };
-return Piscina.move(output);
-```
-
-**Where to inject WRAM snapshot:** After `saveState()` (line ~245), add:
-```typescript
-// Snapshot WRAM before returning
-const wramPtr = core.retro_get_memory_data(2); // RETRO_MEMORY_SYSTEM_RAM
-const wramSize = core.retro_get_memory_size(2);
-const wram = new Uint8Array(core.HEAPU8.buffer.slice(wramPtr, wramPtr + wramSize));
 ```
 
 Then add `wram.buffer` to the transfer list and `wram` to the value object.
