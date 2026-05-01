@@ -13,3 +13,5 @@ frames.txt
 data
 forever
 docker-compose.yml
+decompiled/
+roms/

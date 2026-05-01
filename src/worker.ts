@@ -22,6 +22,8 @@ export const RETRO_DEVICE_ID_JOYPAD_R3 = 15;
 
 export const RETRO_DEVICE_ID_JOYPAD_MASK = 256;
 
+export const RETRO_MEMORY_SYSTEM_RAM = 2;
+
 type Core = any
 
 export interface Frame {
@@ -256,16 +258,24 @@ export default async (data: WorkerData) => {
             break;
     }
 
+    const wramPtr = core.retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+    const wramSize = core.retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+    const wram = wramSize > 0
+        ? new Uint8Array(core.HEAPU8.buffer.slice(wramPtr, wramPtr + wramSize))
+        : new Uint8Array(0);
+
     const output = {
         av_info,
         frames,
         state: newState,
+        wram,
         gameHash: incomingGameHash,
         stateHash: newStateHash,
 
         get [Piscina.transferableSymbol]() {
             return [
                 newState.buffer,
+                wram.buffer,
                 ...frames.map(frame => frame.buffer.buffer)
             ];
         },
@@ -275,6 +285,7 @@ export default async (data: WorkerData) => {
                 av_info,
                 frames,
                 state: newState,
+                wram,
                 gameHash: incomingGameHash,
                 stateHash: newStateHash
             };

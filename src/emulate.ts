@@ -47,7 +47,7 @@ export enum CoreType {
 }
 
 export const emulate = async (pool: Piscina, coreType: CoreType, game: Uint8Array, state: Uint8Array, info: GameInfo, playerInputs: InputState[]) => {
-    let data = { coreType, game, state, frames: [], av_info: {} as any };
+    let data = { coreType, game, state, frames: [], av_info: {} as any, wram: new Uint8Array(0) };
 
     const startEmulation = performance.now();
 
@@ -265,6 +265,7 @@ export const emulate = async (pool: Piscina, coreType: CoreType, game: Uint8Arra
 
     return {
         state: data.state,
+        wram: data.wram,
         recording: recordingBuffer,
         recordingName: path.basename(output)
     }

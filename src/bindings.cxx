@@ -123,6 +123,16 @@ size_t inner_retro_set_audio_sample_batch(const int16_t *data, size_t frames)
     return 0;
 }
 
+unsigned simple_retro_get_memory_data(unsigned id)
+{
+    return (unsigned)retro_get_memory_data(id);
+}
+
+unsigned simple_retro_get_memory_size(unsigned id)
+{
+    return (unsigned)retro_get_memory_size(id);
+}
+
 bool simple_retro_load_game(emscripten::val val)
 {
     retro_set_environment(&inner_retro_environment);
@@ -155,4 +165,6 @@ EMSCRIPTEN_BINDINGS(libretro_bindings)
     emscripten::function("retro_unserialize", &simple_retro_unserialize);
     emscripten::function("retro_set_input_state", &simple_retro_set_input_state);
     emscripten::function("retro_unload_game", &retro_unload_game);
+    emscripten::function("retro_get_memory_data", &simple_retro_get_memory_data);
+    emscripten::function("retro_get_memory_size", &simple_retro_get_memory_size);
 }
