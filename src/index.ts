@@ -64,7 +64,8 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  navigateToPartyMacro, switchFromPartyMacro,
+  navigateToPartyMacro,
+  switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
@@ -624,46 +625,91 @@ const main = async () => {
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
                     // Step 1: navigate to party screen
-                    const stateBytes2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const gameBytes2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const stateBytes2 = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const gameBytes2 = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
                     const navCtx2: MacroContext = {
-                      coreType: info.coreType, game: gameBytes2, state: stateBytes2,
-                      frames: [], wram: new Uint8Array(0), av_info: {},
+                      coreType: info.coreType,
+                      game: gameBytes2,
+                      state: stateBytes2,
+                      frames: [],
+                      wram: new Uint8Array(0),
+                      av_info: {},
                     };
-                    let navRes = await executeMacro(pool, navCtx2, navigateToPartyMacro());
+                    let navRes = await executeMacro(
+                      pool,
+                      navCtx2,
+                      navigateToPartyMacro(),
+                    );
                     // Wait for party screen to fully load (120 frames = 2 seconds)
-                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 120 });
-                    // Reset cursor to top of party list (UP×5 guarantees top regardless of position)
-                    for (let i = 0; i < 5; i++) {
-                      navRes = await emulateParallel(pool, navRes, { input: { UP: true }, duration: 4 });
-                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
-                    }
+                    navRes = await emulateParallel(pool, navRes, {
+                      input: {},
+                      duration: 120,
+                    });
                     const targetSlot = parseInt(parts[3]);
-                    // Navigate DOWN to target slot
-                    for (let i = 0; i < targetSlot; i++) {
-                      navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
+                    const cursorSlot = navRes.wram[0x0203CED1 - 0x02000000];
+                    const steps = targetSlot - cursorSlot;
+                    const dir = steps > 0 ? { input: { DOWN: true }, duration: 4 } : { input: { UP: true }, duration: 4 };
+                    for (let i = 0; i < Math.abs(steps); i++) {
+                      navRes = await emulateParallel(pool, navRes, dir);
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Select and confirm
                     // Select the Pokemon
-                    navRes = await emulateParallel(pool, navRes, { input: { A: true }, duration: 4 });
-                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 30 });
+                    navRes = await emulateParallel(pool, navRes, {
+                      input: { A: true },
+                      duration: 4,
+                    });
+                    navRes = await emulateParallel(pool, navRes, {
+                      input: {},
+                      duration: 30,
+                    });
                     // Confirm the switch ("Will you switch Pokemon?")
-                    navRes = await emulateParallel(pool, navRes, { input: { A: true }, duration: 4 });
-                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 30 });
-                    fs.writeFileSync(path.resolve("data", id, "state.sav"), navRes.state);
-                    // Run autoplay for the switch animation
-                    const { recording: recSw, recordingName: recNameSw, state: stSw, wram: wrSw } = await emulate(
-                      pool, info.coreType,
-                      new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                    navRes = await emulateParallel(pool, navRes, {
+                      input: { A: true },
+                      duration: 4,
+                    });
+                    navRes = await emulateParallel(pool, navRes, {
+                      input: {},
+                      duration: 30,
+                    });
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
                       navRes.state,
-                      { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                    );
+                    // Run autoplay for the switch animation
+                    const {
+                      recording: recSw,
+                      recordingName: recNameSw,
+                      state: stSw,
+                      wram: wrSw,
+                    } = await emulate(
+                      pool,
+                      info.coreType,
+                      new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, info.game)),
+                      ),
+                      navRes.state,
+                      {
+                        ...info,
+                        inputAssist: InputAssist.Autoplay,
+                        inputAssistSpeed: InputAssistSpeed.Normal,
+                      },
                       [],
                     );
-                    fs.writeFileSync(path.resolve("data", id, "state.sav"), stSw);
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      stSw,
+                    );
                     const { rows: swRows2 } = generateLayout(wrSw, id, 1);
                     await message.channel.send({
-                      content: (player.nickname || player.displayName) + ": Switch to slot " + parts[3],
+                      content:
+                        (player.nickname || player.displayName) +
+                        ": Switch to slot " +
+                        parts[3],
                       files: [{ attachment: recSw, name: recNameSw }],
                       components: swRows2 as any,
                     });
