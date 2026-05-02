@@ -64,7 +64,7 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  switchPokemonMacro,
+  navigateToPartyMacro, selectPartySlotMacro,
   switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
@@ -624,8 +624,40 @@ const main = async () => {
                     macro = useItemMacro(slotIndex);
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
-                    macro = switchPokemonMacro(parseInt(parts[3]));
-                    macroLabel = "Switch to slot " + parts[3];
+                    // Step 1: navigate to party screen
+                    const stateBytes2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
+                    const gameBytes2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const navCtx2: MacroContext = {
+                      coreType: info.coreType, game: gameBytes2, state: stateBytes2,
+                      frames: [], wram: new Uint8Array(0), av_info: {},
+                    };
+                    let navRes = await executeMacro(pool, navCtx2, navigateToPartyMacro());
+                    // Poll until party screen is ready (gPartyMenu.menuType == 1)
+                    for (let p = 0; p < 20; p++) {
+                      const menuType = navRes.wram[0x0203CED0 - 0x02000000] & 0x0F;
+                      if (menuType === 1) break;
+                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 15 });
+                    }
+                    // Step 2: select and confirm the party slot
+                    const slot = parseInt(parts[3]);
+                    navRes = await executeMacro(pool, navRes, selectPartySlotMacro(slot));
+                    fs.writeFileSync(path.resolve("data", id, "state.sav"), navRes.state);
+                    // Run autoplay for the switch animation
+                    const { recording: recSw, recordingName: recNameSw, state: stSw, wram: wrSw } = await emulate(
+                      pool, info.coreType,
+                      new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                      navRes.state,
+                      { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                      [],
+                    );
+                    fs.writeFileSync(path.resolve("data", id, "state.sav"), stSw);
+                    const { rows: swRows2 } = generateLayout(wrSw, id, 1);
+                    await message.channel.send({
+                      content: (player.nickname || player.displayName) + ": Switch to slot " + parts[3],
+                      files: [{ attachment: recSw, name: recNameSw }],
+                      components: swRows2 as any,
+                    });
+                    return;
                   } else if (parts[2] === "run") {
                     macro = runMacro();
                     macroLabel = "Run";

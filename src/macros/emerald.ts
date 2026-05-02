@@ -113,23 +113,25 @@ export function useItemMacro(slotIndex: number = 0): Macro {
 
 // ── Switch Pokémon Macro (from FIGHT menu) ───────────────────────────────────
 
-export function switchPokemonMacro(partySlot: number): Macro {
+/** Navigate to party screen (FIGHT→PKMN) and stop. Caller should poll for ready. */
+export function navigateToPartyMacro(): Macro {
+  return [
+    ...resetToFight(),
+    { ...DOWN }, { ...idle(6) },
+    { ...A },
+    // No fixed wait — caller will poll for gPartyMenu.menuType == 1
+  ];
+}
+
+/** Select and confirm a party slot (assumes party screen is already open). */
+export function selectPartySlotMacro(partySlot: number): Macro {
   if (partySlot < 0 || partySlot > 5) {
     throw new Error(`Invalid party slot: ${partySlot}. Must be 0-5.`);
   }
-
-  const steps: MacroStep[] = [
-    ...resetToFight(),
-    { ...DOWN },
-    { ...idle(6) },
-    { ...A },
-    { ...idle(60) },
-  ];
-
+  const steps: MacroStep[] = [];
   for (let i = 0; i < partySlot; i++) {
     steps.push({ ...DOWN }, { ...idle(4) });
   }
-
   steps.push(
     { ...A, updateButtons: true },
     { ...idle(4) },
