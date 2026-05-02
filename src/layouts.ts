@@ -368,7 +368,7 @@ function buildBattleFight(
   }
 
   // Row 3 (or 2 in trainer): Healing items
-  const healIds = [13, 22, 21, 20]; // Potion, Super Potion, Hyper Potion, Max Potion
+  const healIds = [13, 22, 21, 20, 19]; // Potion, Super Potion, Hyper Potion, Max Potion, Full Restore
   const itemButtons = healIds.map((id) => {
     const qty = findBagItem(wram, 0, id);
     const name = itemName(id);
