@@ -198,10 +198,13 @@ function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
 
 /** Get the player's active party Pokemon (first non-egg battler). */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
-  // For now, use party slot 0 (the lead). In double battles, the player's
-  // second active battler would be in a different slot, but mapping battler
-  // IDs to party slots requires more complex logic deferred to M6.
-  return readPartyPokemon(wram, 0);
+  // Use gBattlerPartyIndexes to find the correct party slot for the active battler.
+  // During battle, swaps reorder the party; slot 0 is not always the active mon.
+  const battler = readU8(wram, 0x02024064);
+  const idx = readU16(wram, 0x0202406e + battler * 2);
+  // Fall back to slot 0 if index is invalid or battle just started
+  const slot = (idx >= 0 && idx <= 5) ? idx : 0;
+  return readPartyPokemon(wram, slot);
 }
 
 // ── Bag Data Reader ──────────────────────────────────────────────────────────
