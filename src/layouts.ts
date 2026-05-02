@@ -503,7 +503,7 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
 // ── Pokémon Switch Layout ────────────────────────────────────────────────────
 
-function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
+export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
 
   // Show up to 6 party Pokemon, 3 per row
