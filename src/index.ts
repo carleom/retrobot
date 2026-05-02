@@ -560,38 +560,16 @@ const main = async () => {
                     return;
                   }
 
-                  // Navigate to switch screen
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
-                    const navCtx: MacroContext = {
-                      coreType: info.coreType,
-                      game: gameBytes,
-                      state: stateBytes,
-                      frames: [],
-                      wram: new Uint8Array(0),
-                      av_info: {},
-                    };
-                    const navResult = await executeMacro(pool, navCtx, [
-                      { input: { DOWN: true }, duration: 4 },
-                      { input: {}, duration: 6 },
-                      { input: { A: true }, duration: 4 },
-                      { input: {}, duration: 20 },
-                    ]);
-                    fs.writeFileSync(
-                      path.resolve("data", id, "state.sav"),
-                      navResult.state,
-                    );
-                      navResult.wram,
-                      id,
-                      1,
-                    );
-                    await message.edit({
-                      components: swRows as any,
-                    });
+                                    // Show party switch list (no game navigation, just read RAM)
+                  if (rest === "macro-switch") {
+                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
+                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const { wram: swWram } = await emulateParallel(pool, {
+                      coreType: info.coreType, game: gameBytes, state: stateBytes,
+                      frames: [], gameHash: undefined, stateHash: undefined,
+                    }, { input: {}, duration: 1 });
+                    const swRows = buildPkmnSwitch(swWram, id);
+                    await message.edit({ components: swRows as any });
                     await interaction.update({});
                     return;
                   }
