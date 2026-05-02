@@ -632,10 +632,13 @@ const main = async () => {
                       frames: [], wram: new Uint8Array(0), av_info: {},
                     };
                     let navRes = await executeMacro(pool, navCtx2, navigateToPartyMacro());
+                    // Minimum wait: 30 frames for party screen transition
+                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 30 });
                     // Poll until party screen is ready (gPartyMenu.menuType == 1)
                     for (let p = 0; p < 20; p++) {
                       const menuType = navRes.wram[0x0203CED0 - 0x02000000] & 0x0F;
-                      if (menuType === 1) break;
+                      console.log("Switch poll " + p + ": menuType=" + menuType);
+                      if (menuType === 1) { console.log("Party screen ready at poll " + p); break; }
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 15 });
                     }
                     // Step 2: select and confirm the party slot
