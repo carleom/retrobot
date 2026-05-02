@@ -507,6 +507,7 @@ export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuil
   const rows: ActionRowBuilder[] = [];
 
   // Show up to 6 party Pokemon, 3 per row
+  console.log("--- Party list species ---"); for (let i = 0; i < 6; i++) { const p = readPartyPokemon(wram, i); console.log("slot " + i + ": " + p.species); } console.log("---");
   for (let rowIdx = 0; rowIdx < 2; rowIdx++) {
     const buttons: ButtonBuilder[] = [];
     for (let col = 0; col < 3; col++) {
