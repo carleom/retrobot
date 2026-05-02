@@ -110,9 +110,13 @@ function writePartyPokemon(
   // Growth substruct at 0x20: species|heldItem
   writeU32(wram, base + 0x20, species);
   // Attacks substruct at 0x2C-0x37
-  writeU32(wram, base + 0x2C, moves[0] | (moves[1] << 16));
+  writeU32(wram, base + 0x2c, moves[0] | (moves[1] << 16));
   writeU32(wram, base + 0x30, moves[2] | (moves[3] << 16));
-  writeU32(wram, base + 0x34, pp[0] | (pp[1] << 8) | (pp[2] << 16) | (pp[3] << 24));
+  writeU32(
+    wram,
+    base + 0x34,
+    pp[0] | (pp[1] << 8) | (pp[2] << 16) | (pp[3] << 24),
+  );
   // Unencrypted battle stats
   writeU8(wram, base + 0x54, level);
   writeU16(wram, base + 0x56, currentHp);
@@ -212,13 +216,13 @@ test("overworld layout has D-pad + A/B/Start", () => {
   assert(result.scene === Scene.OVERWORLD, "should be overworld scene");
 
   const labels = getAllLabels(result.rows);
-  assert(labels.includes("Up"), "should have Up");
-  assert(labels.includes("Down"), "should have Down");
+  assert(labels.includes("Up"), "should have up button");
+  assert(labels.includes("Down"), "should have down button");
   assert(labels.includes("Left"), "should have Left");
   assert(labels.includes("Right"), "should have Right");
-  assert(labels.includes("A"), "should have A");
-  assert(labels.includes("B"), "should have B");
-  assert(labels.includes("Start"), "should have Start");
+  assert(labels.includes("A"), "should have A button");
+  assert(labels.includes("B"), "should have B button");
+  assert(labels.includes("Start"), "should have Start button");
   assert(result.rows.length === 2, "should have 2 rows");
 });
 
@@ -270,7 +274,7 @@ test("wild battle fight shows moves + balls + items + actions", () => {
   );
   assert(
     labels.some((l) => l.includes("ANTIDOTE x3")),
-    "should have ANTIDOTE",
+    "should have A buttonNTIDOTE",
   );
 
   // Row 4: Switch, Manual, Run (wild — Run visible)
@@ -402,7 +406,7 @@ test("move select layout shows move names without PP", () => {
   );
   assert(
     labels.some((l) => l.includes("Back")),
-    "should have Back button",
+    "should have B buttonack button",
   );
 });
 
@@ -432,7 +436,7 @@ test("pokemon switch layout shows party with HP", () => {
 
   assert(
     labels.some((l) => l.startsWith("BULBASAUR") && l.includes("80/80")),
-    "should have BULBASAUR 80/80",
+    "should have B buttonULBASAUR 80/80",
   );
   assert(
     labels.some((l) => l.startsWith("CHARMANDER") && l.includes("120/120")),
@@ -448,7 +452,7 @@ test("pokemon switch layout shows party with HP", () => {
   );
   assert(
     labels.some((l) => l.includes("Back to Battle")),
-    "should have Back button",
+    "should have B buttonack button",
   );
 });
 
