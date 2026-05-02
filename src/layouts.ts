@@ -29,6 +29,11 @@ const lookupsPath = path.join(
 );
 const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 
+const moveEmojis: Record<string, string> = {};
+for (const entry of Object.entries((lookups as any).moveEmojis || {})) {
+  moveEmojis[entry[0]] = entry[1] as string;
+}
+
 function moveName(id: number): string {
   return lookups.moves[String(id)] ?? `MOVE_${id}`;
 }
@@ -181,7 +186,11 @@ interface BagItem {
 }
 
 /** Find quantity of a specific item ID in a bag pocket. Returns 0 if not found. */
-function findBagItem(wram: Uint8Array, pocketIndex: number, itemId: number): number {
+function findBagItem(
+  wram: Uint8Array,
+  pocketIndex: number,
+  itemId: number,
+): number {
   const items = readBagPocket(wram, pocketIndex);
   const found = items.find((i) => i.itemId === itemId);
   return found ? found.quantity : 0;
@@ -337,7 +346,8 @@ function buildBattleFight(
     const hasMove = moveId !== 0;
     const hasPp = pp > 0;
 
-    const label = hasMove ? `${name} (${pp})` : "—";
+    const emoji = moveEmojis[String(moveId)] || "";
+    const label = hasMove ? `${emoji} ${name} (${pp})` : "—";
     const disabled = !hasMove || !hasPp;
 
     moveButtons.push(
@@ -417,7 +427,7 @@ function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
     moveButtons.push(
       btn(
         `${gameId}-macro-move-${i}`,
-        hasMove ? name : "—",
+        hasMove ? `${moveEmojis[String(moveId)] || ""} ${name}` : "—",
         hasMove && hasPp ? ButtonStyle.Primary : ButtonStyle.Secondary,
         !hasMove || !hasPp,
       ),
