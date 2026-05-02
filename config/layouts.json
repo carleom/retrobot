@@ -4,7 +4,8 @@
   "overworld": {
     "rows": [
       { "buttons": ["up", "down", "left", "right"] },
-      { "buttons": ["a", "b", "start"] }
+      { "buttons": ["a", "b", "start"] },
+      { "buttons": ["mult3", "mult5", "mult10"] }
     ]
   },
 
@@ -16,17 +17,40 @@
     "actionButtons": [
       { "id": "macro-switch", "label": "🔄 Switch", "style": "secondary" },
       { "id": "macro-manual", "label": "🎮 Manual", "style": "secondary" },
-      { "id": "macro-run", "label": "🏃 Run", "style": "danger", "wildOnly": true }
+      {
+        "id": "macro-run",
+        "label": "🏃 Run",
+        "style": "danger",
+        "wildOnly": true
+      }
     ]
   },
 
   "buttonStyles": {
-    "up":     { "emoji": "⬆️", "style": "secondary" },
-    "down":   { "emoji": "⬇️", "style": "secondary" },
-    "left":   { "emoji": "⬅️", "style": "secondary" },
-    "right":  { "emoji": "➡️", "style": "secondary" },
-    "a":      { "emoji": "🅰️", "style": "success" },
-    "b":      { "emoji": "🅱️", "style": "danger" },
-    "start":  { "emoji": "▶️", "style": "secondary" }
+    "up": { "emoji": "⬆️", "style": "secondary" },
+    "down": { "emoji": "⬇️", "style": "secondary" },
+    "left": { "emoji": "⬅️", "style": "secondary" },
+    "right": { "emoji": "➡️", "style": "secondary" },
+    "a": { "emoji": "🅰️", "style": "success" },
+    "b": { "emoji": "🅱️", "style": "danger" },
+    "start": { "emoji": "▶️", "style": "secondary" },
+    "mult3": {
+      "emoji": "3️⃣",
+      "style": "secondary",
+      "type": "multiplier",
+      "value": 3
+    },
+    "mult5": {
+      "emoji": "5️⃣",
+      "style": "secondary",
+      "type": "multiplier",
+      "value": 5
+    },
+    "mult10": {
+      "emoji": "🔟",
+      "style": "secondary",
+      "type": "multiplier",
+      "value": 10
+    }
   }
 }
