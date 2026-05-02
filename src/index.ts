@@ -611,6 +611,11 @@ const main = async () => {
                   }
                   if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
 
+                  // If battle ended (overworld), wait extra for post-battle animations
+                  if (sceneDetector.detect(result.wram) === Scene.OVERWORLD) {
+                    result = await emulateParallel(pool, result, { input: {}, duration: 120 });
+                  }
+
                   const { recording, recordingName } =
                     await encodeMacroRecording(result.frames, info.coreType);
                   fs.writeFileSync(
