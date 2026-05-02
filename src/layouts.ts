@@ -511,7 +511,7 @@ export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuil
     const buttons: ButtonBuilder[] = [];
     for (let col = 0; col < 3; col++) {
       const slotIdx = rowIdx * 3 + col;
-      const pkmn = readPartyPokemon(wram, slotIdx);
+      const pkmn = readPartyPokemon(wram, slotIdx); console.log("Party slot " + slotIdx + ": species=" + pkmn.species);
 
       if (pkmn.species === 0) {
         // Empty slot
