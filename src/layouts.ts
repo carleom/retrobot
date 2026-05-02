@@ -280,7 +280,7 @@ export function generateLayout(
   multiplier: number = 1,
 ): LayoutResult {
   _noneCounter = 0;
-  let scene = sceneDetector.detect(wram);
+  let scene = sceneDetector.detect(wram); console.log("generateLayout: scene=" + scene + " mapNum=" + readU8(wram, 0x02025a05));
 
   // Fallback: if on a real map, force overworld regardless of battle flags
   if (scene !== Scene.OVERWORLD) {
