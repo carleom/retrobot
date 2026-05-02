@@ -37,8 +37,14 @@ try {
 } catch (_) {}
 // Map item IDs to emoji ID keys
 const itemEmojiMap: Record<number, string> = {
-  4: "pokeball", 3: "greatball", 2: "ultraball",
-  13: "potion", 22: "superpotion", 21: "hyperpotion", 20: "maxpotion", 19: "fullrestore"
+  4: "pokeball",
+  3: "greatball",
+  2: "ultraball",
+  13: "potion",
+  22: "superpotion",
+  21: "hyperpotion",
+  20: "maxpotion",
+  19: "fullrestore",
 };
 
 // Load button layout config
@@ -353,6 +359,9 @@ export function buildOverworld(
       btn(`${gameId}-a-${m}`, "", ButtonStyle.Success, false, "🅰️"),
       btn(`${gameId}-b-${m}`, "", ButtonStyle.Danger, false, "🅱️"),
       btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
+    row(
+      btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary),
+    ),
     ),
   ];
 }

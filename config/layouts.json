@@ -5,6 +5,7 @@
     "rows": [
       { "buttons": ["up", "down", "left", "right"] },
       { "buttons": ["a", "b", "start"] },
+      { "buttons": ["ovswitch"] },
       { "buttons": ["mult3", "mult5", "mult10"] }
     ]
   },
@@ -34,6 +35,7 @@
     "a": { "emoji": "🅰️", "style": "success" },
     "b": { "emoji": "🅱️", "style": "danger" },
     "start": { "emoji": "▶️", "style": "secondary" },
+    "ovswitch": { "emoji": "🔄", "style": "secondary", "label": "Switch" },
     "mult3": {
       "emoji": "3️⃣",
       "style": "secondary",

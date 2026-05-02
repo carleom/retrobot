@@ -65,7 +65,7 @@ import {
   selectMoveMacro,
   useItemMacro,
   navigateToPartyMacro,
-  switchFromPartyMacro,
+  switchFromPartyMacro, overworldSwitchMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
@@ -624,7 +624,42 @@ const main = async () => {
                     macro = useItemMacro(slotIndex);
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
-                    // Step 1: navigate to party screen
+                    // Check if we are in battle or overworld
+                    const ctxBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
+                    const ctxGame = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const { wram: ctxWram } = await emulateParallel(pool, {
+                      coreType: info.coreType, game: ctxGame, state: ctxBytes,
+                      frames: [], gameHash: undefined, stateHash: undefined,
+                    }, { input: {}, duration: 1 });
+                    const inBattle = ((ctxWram[0x02022fec - 0x02000000] | (ctxWram[0x02022fed - 0x02000000] << 8) | (ctxWram[0x02022fee - 0x02000000] << 16) | (ctxWram[0x02022fef - 0x02000000] << 24)) >>> 0) !== 0;
+                    
+                    if (!inBattle) {
+                      // Overworld switch: execute directly (no party screen navigation needed)
+                      const slot = parseInt(parts[3]);
+                      const ovCtx: MacroContext = {
+                        coreType: info.coreType, game: ctxGame, state: ctxBytes,
+                        frames: [], wram: new Uint8Array(0), av_info: {},
+                      };
+                      const ovResult = await executeMacro(pool, ovCtx, overworldSwitchMacro(slot));
+                      fs.writeFileSync(path.resolve("data", id, "state.sav"), ovResult.state);
+                      const { recording: recOv, recordingName: recNameOv, state: stOv, wram: wrOv } = await emulate(
+                        pool, info.coreType,
+                        new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                        ovResult.state,
+                        { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                        [],
+                      );
+                      fs.writeFileSync(path.resolve("data", id, "state.sav"), stOv);
+                      const { rows: ovRows } = generateLayout(wrOv, id, 1);
+                      await message.channel.send({
+                        content: (player.nickname || player.displayName) + ": Switched lead",
+                        files: [{ attachment: recOv, name: recNameOv }],
+                        components: ovRows as any,
+                      });
+                      return;
+                    }
+
+                    // Battle switch: navigate to party screen
                     const stateBytes2 = new Uint8Array(
                       fs.readFileSync(path.resolve("data", id, "state.sav")),
                     );

@@ -22,6 +22,7 @@ import { Macro, MacroStep } from "../macros";
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const A: MacroStep = { input: { A: true }, duration: 4 };
+const START: MacroStep = { input: { START: true }, duration: 4 };
 const B: MacroStep = { input: { B: true }, duration: 4 };
 const DOWN: MacroStep = { input: { DOWN: true }, duration: 4 };
 const UP: MacroStep = { input: { UP: true }, duration: 4 };
@@ -117,7 +118,8 @@ export function useItemMacro(slotIndex: number = 0): Macro {
 export function navigateToPartyMacro(): Macro {
   return [
     ...resetToFight(),
-    { ...DOWN }, { ...idle(6) },
+    { ...DOWN },
+    { ...idle(6) },
     { ...A },
     // No fixed wait — caller will poll for gPartyMenu.menuType == 1
   ];
@@ -191,4 +193,35 @@ export function openBagMacro(): Macro {
 
 export function backMacro(): Macro {
   return [{ ...B }, { ...idle(12) }];
+}
+
+// ── Overworld Switch Macro ──────────────────────────────────────────────────
+
+export function overworldSwitchMacro(partySlot: number): Macro {
+  if (partySlot < 0 || partySlot > 5) {
+    throw new Error("Invalid party slot: " + partySlot + ". Must be 0-5.");
+  }
+  if (partySlot === 0) return [];
+  const steps: MacroStep[] = [
+    { ...START }, { ...idle(10) },
+    { ...A }, { ...idle(60) },
+  ];
+  for (let i = 0; i < partySlot; i++) {
+    steps.push({ ...DOWN }, { ...idle(4) });
+  }
+  steps.push(
+    { ...A }, { ...idle(30) },
+    { ...DOWN }, { ...idle(4) },
+    { ...A }, { ...idle(30) },
+  );
+  for (let i = 0; i < partySlot; i++) {
+    steps.push({ ...UP }, { ...idle(4) });
+  }
+  steps.push(
+    { ...A }, { ...idle(20) },
+    { ...B }, { ...idle(10) },
+    { ...B }, { ...idle(10) },
+    { ...B }, { ...idle(10) },
+  );
+  return steps;
 }
