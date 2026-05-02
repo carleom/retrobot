@@ -633,15 +633,16 @@ const main = async () => {
                     let navRes = await executeMacro(pool, navCtx2, navigateToPartyMacro());
                     // Wait for party screen to fully load (120 frames = 2 seconds)
                     navRes = await emulateParallel(pool, navRes, { input: {}, duration: 120 });
-                    // Read current cursor position on party screen (gPartyMenu.slotId at 0x0203CED1)
-                    const currentSlot = navRes.wram[0x0203CED1 - 0x02000000];
+                    // Reset cursor to top of party list (UP×5 guarantees top regardless of position)
+                    for (let i = 0; i < 5; i++) {
+                      navRes = await emulateParallel(pool, navRes, { input: { UP: true }, duration: 4 });
+                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
+                    }
+                    // Navigate DOWN to target slot
                     const targetSlot = parseInt(parts[3]);
-                    // Navigate relative to current position
-                    const distance = targetSlot - currentSlot;
-                    const dir = distance > 0 ? { input: { DOWN: true }, duration: 4 } : { input: { UP: true }, duration: 4 };
-                    for (let i = 0; i < Math.abs(distance); i++) {
-                      navRes = await emulateParallel(pool, navRes, dir);
-                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 4 });
+                    for (let i = 0; i < targetSlot; i++) {
+                      navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
+                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Select and confirm
                     navRes = await executeMacro(pool, navRes, [
