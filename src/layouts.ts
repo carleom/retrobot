@@ -280,6 +280,7 @@ export function generateLayout(
   multiplier: number = 1,
 ): LayoutResult {
   _noneCounter = 0;
+  let scene = sceneDetector.detect(wram);
 
   // If battle has ended (gBattleOutcome != 0), force overworld
   if (scene !== Scene.OVERWORLD) {
