@@ -88,23 +88,42 @@ interface PartyPokemon {
   slotIndex: number;
 }
 
+/**
+ * Decrypt a u32 from the BoxPokemon encrypted region (offsets 0x20-0x4F).
+ * Each u32 is XOR'd with (personality ^ otId).
+ */
+function decryptU32(wram: Uint8Array, addr: number, key: number): number {
+  return readU32(wram, addr) ^ key;
+}
+
 /** Read party Pokemon at a given slot index (0-5). */
 function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
+  // Read unencrypted metadata for the XOR key
+  const personality = readU32(wram, base + 0x00);
+  const otId = readU32(wram, base + 0x04);
+  const key = personality ^ otId;
+  // Decrypt Substruct 0 (0x20): species (u16) | heldItem (u16)
+  const ss0 = decryptU32(wram, base + 0x20, key);
+  const species = ss0 & 0xFFFF;
+  // Decrypt Substruct 3 (0x2C): moves[0] | moves[1]
+  const ss3 = decryptU32(wram, base + 0x2C, key);
+  const move0 = ss3 & 0xFFFF;
+  const move1 = (ss3 >> 16) & 0xFFFF;
+  // Decrypt Substruct 4 (0x30): moves[2] | moves[3]
+  const ss4 = decryptU32(wram, base + 0x30, key);
+  const move2 = ss4 & 0xFFFF;
+  const move3 = (ss4 >> 16) & 0xFFFF;
+  // Decrypt Substruct 5 (0x34): pp[0] | pp[1] | pp[2] | pp[3]
+  const ss5 = decryptU32(wram, base + 0x34, key);
+  const pp0 = ss5 & 0xFF;
+  const pp1 = (ss5 >> 8) & 0xFF;
+  const pp2 = (ss5 >> 16) & 0xFF;
+  const pp3 = (ss5 >> 24) & 0xFF;
   return {
-    species: readU16(wram, base + 0x00),
-    moves: [
-      readU16(wram, base + 0x0c),
-      readU16(wram, base + 0x0e),
-      readU16(wram, base + 0x10),
-      readU16(wram, base + 0x12),
-    ],
-    pp: [
-      readU8(wram, base + 0x14),
-      readU8(wram, base + 0x15),
-      readU8(wram, base + 0x16),
-      readU8(wram, base + 0x17),
-    ],
+    species,
+    moves: [move0, move1, move2, move3],
+    pp: [pp0, pp1, pp2, pp3],
     level: readU8(wram, base + 0x54),
     currentHp: readU16(wram, base + 0x56),
     maxHp: readU16(wram, base + 0x58),
@@ -294,9 +313,7 @@ function buildBattleFight(
     });
     // Pad to 4 buttons
     while (ballButtons.length < 4) {
-      ballButtons.push(
-        btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
-      );
+      ballButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
     }
     rows.push(row(...ballButtons));
   }
@@ -313,9 +330,7 @@ function buildBattleFight(
     );
   });
   while (itemButtons.length < 4) {
-    itemButtons.push(
-      btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
-    );
+    itemButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
   }
   rows.push(row(...itemButtons));
 
@@ -390,9 +405,7 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
     );
   });
   while (itemButtons.length < 4) {
-    itemButtons.push(
-      btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
-    );
+    itemButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
   }
   rows.push(row(...itemButtons));
 
