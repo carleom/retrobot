@@ -198,10 +198,10 @@ function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
 
 /** Get the player's active party Pokemon (first non-egg battler). */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
-  // Use gBattlerPartyIndexes to find the correct party slot for the active battler
-  const battler = readU8(wram, 0x02024064);
-  const partySlot = readU16(wram, 0x0202406e + battler * 2);
-  return readPartyPokemon(wram, partySlot);
+  // For now, use party slot 0 (the lead). In double battles, the player's
+  // second active battler would be in a different slot, but mapping battler
+  // IDs to party slots requires more complex logic deferred to M6.
+  return readPartyPokemon(wram, 0);
 }
 
 // ── Bag Data Reader ──────────────────────────────────────────────────────────
@@ -503,10 +503,7 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
 // ── Pokémon Switch Layout ────────────────────────────────────────────────────
 
-export function buildPkmnSwitch(
-  wram: Uint8Array,
-  gameId: string,
-): ActionRowBuilder[] {
+export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
 
   // Show up to 6 party Pokemon, 3 per row
