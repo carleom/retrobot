@@ -35,6 +35,11 @@ let emojiIds: Record<string, string> = {};
 try {
   emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8"));
 } catch (_) {}
+// Map item IDs to emoji ID keys
+const itemEmojiMap: Record<number, string> = {
+  4: "pokeball", 3: "greatball", 2: "ultraball",
+  13: "potion", 22: "superpotion", 21: "hyperpotion", 20: "maxpotion", 19: "fullrestore"
+};
 
 // Load button layout config
 const layoutConfig = JSON.parse(
@@ -393,8 +398,7 @@ function buildBattleFight(
     const ballButtons = ballIds.map((id) => {
       const qty = findBagItem(wram, 1, id);
       const name = itemName(id);
-      const ballEmoji =
-        emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
+      const ballEmoji = emojiIds[itemEmojiMap[id]] || undefined;
       return btn(
         `${gameId}-macro-item-1-${id}`,
         ballEmoji ? "" : name,
@@ -411,8 +415,7 @@ function buildBattleFight(
   const itemButtons = healIds.map((id) => {
     const qty = findBagItem(wram, 0, id);
     const name = itemName(id);
-    const healEmoji =
-      emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
+    const healEmoji = emojiIds[itemEmojiMap[id]] || undefined;
     return btn(
       `${gameId}-macro-item-0-${id}`,
       healEmoji ? "" : name,
