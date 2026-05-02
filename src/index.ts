@@ -53,6 +53,7 @@ import {
 import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
 import {
   generateLayout,
+  buildPkmnSwitch,
   buildOverworld,
   readBagPocket,
   itemName,
@@ -560,14 +561,26 @@ const main = async () => {
                     return;
                   }
 
-                                    // Show party switch list (no game navigation, just read RAM)
+                  // Show party switch list (no game navigation, just read RAM)
                   if (rest === "macro-switch") {
-                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                    const { wram: swWram } = await emulateParallel(pool, {
-                      coreType: info.coreType, game: gameBytes, state: stateBytes,
-                      frames: [], gameHash: undefined, stateHash: undefined,
-                    }, { input: {}, duration: 1 });
+                    const stateBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const gameBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
+                    const { wram: swWram } = await emulateParallel(
+                      pool,
+                      {
+                        coreType: info.coreType,
+                        game: gameBytes,
+                        state: stateBytes,
+                        frames: [],
+                        gameHash: undefined,
+                        stateHash: undefined,
+                      },
+                      { input: {}, duration: 1 },
+                    );
                     const swRows = buildPkmnSwitch(swWram, id);
                     await message.edit({ components: swRows as any });
                     await interaction.update({});
