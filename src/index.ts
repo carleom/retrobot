@@ -63,7 +63,7 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  switchPokemonMacro,
+  switchPokemonMacro, switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
@@ -622,7 +622,7 @@ const main = async () => {
                     macro = useItemMacro(slotIndex);
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
-                    macro = switchFromPartyMacro(parseInt(parts[3]));
+                    macro = switchPokemonMacro(parseInt(parts[3]));
                     macroLabel = "Switch to slot " + parts[3];
                   } else if (parts[2] === "run") {
                     macro = runMacro();
