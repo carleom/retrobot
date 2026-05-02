@@ -579,10 +579,7 @@ const main = async () => {
                       1,
                     );
                     await message.edit({
-                      components: [
-                        ...swRows,
-                        ...buildMultiplierRows(id, 1, info.multipliers, true),
-                      ],
+                      components: swRows as any,
                     });
                     await interaction.update({});
                     return;
