@@ -64,7 +64,6 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  navigateToPartyMacro, selectPartySlotMacro,
   switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
@@ -634,9 +633,22 @@ const main = async () => {
                     let navRes = await executeMacro(pool, navCtx2, navigateToPartyMacro());
                     // Wait for party screen to fully load (120 frames = 2 seconds)
                     navRes = await emulateParallel(pool, navRes, { input: {}, duration: 120 });
-                    // Step 2: select and confirm the party slot
-                    const slot = parseInt(parts[3]);
-                    navRes = await executeMacro(pool, navRes, selectPartySlotMacro(slot));
+                    // Read current cursor position on party screen (gPartyMenu.slotId at 0x0203CED1)
+                    const currentSlot = navRes.wram[0x0203CED1 - 0x02000000];
+                    const targetSlot = parseInt(parts[3]);
+                    // Navigate relative to current position
+                    const distance = targetSlot - currentSlot;
+                    const dir = distance > 0 ? { input: { DOWN: true }, duration: 4 } : { input: { UP: true }, duration: 4 };
+                    for (let i = 0; i < Math.abs(distance); i++) {
+                      navRes = await emulateParallel(pool, navRes, dir);
+                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 4 });
+                    }
+                    // Select and confirm
+                    navRes = await executeMacro(pool, navRes, [
+                      { input: { A: true }, duration: 4 },
+                      { input: {}, duration: 4 },
+                      { input: { A: true }, duration: 4 },
+                    ]);
                     fs.writeFileSync(path.resolve("data", id, "state.sav"), navRes.state);
                     // Run autoplay for the switch animation
                     const { recording: recSw, recordingName: recNameSw, state: stSw, wram: wrSw } = await emulate(
