@@ -200,13 +200,11 @@ function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
   // Use gBattlerPartyIndexes to find the correct party slot for the active battler.
   // During battle, swaps reorder the party; slot 0 is not always the active mon.
-  const battler = readU8(wram, 0x02024064);
-  const idx = readU16(wram, 0x0202406e + battler * 2);
+  // Always use player battler 0, not gActiveBattler (may be enemy)
+  const idx = readU16(wram, 0x0202406e); // gBattlerPartyIndexes[0]
   // Fall back to slot 0 if index is invalid or battle just started
   const slot = (idx >= 0 && idx <= 5) ? idx : 0;
-  const pkmn = readPartyPokemon(wram, slot);
-  console.log('getActivePokemon: battler=' + battler + ' idx=' + idx + ' slot=' + slot + ' species=' + pkmn.species);
-  return pkmn;
+  return readPartyPokemon(wram, slot);
 }
 
 // ── Bag Data Reader ──────────────────────────────────────────────────────────
