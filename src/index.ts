@@ -586,7 +586,7 @@ const main = async () => {
                       path.resolve("data", id, "state.sav"),
                       navResult.state,
                     );
-                    const { rows: swRows } = generateLayout(
+                    console.log("navResult wram battleFlags=" + (navResult.wram[0x22fec])); const swScene = new EmeraldSceneDetector().detect(navResult.wram); console.log("Switch nav: scene=" + swScene); const { rows: swRows } = generateLayout(
                       navResult.wram,
                       id,
                       1,
