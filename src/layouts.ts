@@ -441,6 +441,7 @@ function buildBattleFight(
 // ── Move Select Layout ───────────────────────────────────────────────────────
 
 function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
+  const activePkmn = getActivePokemon(wram);
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: 4 move buttons (name only, no PP — the game shows PP on-screen)
