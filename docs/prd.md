@@ -601,6 +601,8 @@ result with the battle menu buttons refreshed. No intermediate GIFs leak.
 - Scene re-detection on every interaction result — if the scene changes unexpectedly (e.g., wild
   encounter interrupts overworld), handle gracefully
 - Fallback: if scene is UNKNOWN, fall back to raw D-pad + A/B controls
+- Bag pocket context tracking (deferred from M3): determine which pocket player is in
+- Overworld party reorder sub-layout (deferred from M3): multi-step slot swap flow
 
 **Acceptance:** Full playable flow — boot Emerald, walk around with D-pad, encounter a wild
 Pokémon, battle overlay appears with moves/items, use Tackle, see the GIF result, battle
