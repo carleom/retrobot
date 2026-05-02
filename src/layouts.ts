@@ -36,6 +36,18 @@ try {
   emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8"));
 } catch (_) {}
 
+// Load button layout config
+const layoutConfig = JSON.parse(fs.readFileSync(
+  path.join(__dirname, "..", "config", "layouts.json"), "utf-8"));
+const buttonStyles: Record<string, { emoji: string; style: string }> = layoutConfig.buttonStyles;
+
+function styleFrom(s: string): ButtonStyle {
+  return s === "primary" ? ButtonStyle.Primary
+    : s === "danger" ? ButtonStyle.Danger
+    : s === "success" ? ButtonStyle.Success
+    : ButtonStyle.Secondary;
+}
+
 const moveEmojis: Record<string, string> = {};
 for (const entry of Object.entries((lookups as any).moveEmojis || {})) {
   moveEmojis[entry[0]] = entry[1] as string;

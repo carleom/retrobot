@@ -1,0 +1,32 @@
+{
+  "_description": "Button layout definitions per scene. Edit this to change buttons without touching code.",
+
+  "overworld": {
+    "rows": [
+      { "buttons": ["up", "down", "left", "right"] },
+      { "buttons": ["a", "b", "start"] }
+    ]
+  },
+
+  "battleFight": {
+    "ballIds": [4, 3, 2],
+    "_ballIds": "Poké Ball, Great Ball, Ultra Ball — shown in wild battles only",
+    "healIds": [13, 22, 21, 20, 19],
+    "_healIds": "Potion, Super Potion, Hyper Potion, Max Potion, Full Restore",
+    "actionButtons": [
+      { "id": "macro-switch", "label": "🔄 Switch", "style": "secondary" },
+      { "id": "macro-manual", "label": "🎮 Manual", "style": "secondary" },
+      { "id": "macro-run", "label": "🏃 Run", "style": "danger", "wildOnly": true }
+    ]
+  },
+
+  "buttonStyles": {
+    "up":     { "emoji": "⬆️", "style": "secondary" },
+    "down":   { "emoji": "⬇️", "style": "secondary" },
+    "left":   { "emoji": "⬅️", "style": "secondary" },
+    "right":  { "emoji": "➡️", "style": "secondary" },
+    "a":      { "emoji": "🅰️", "style": "success" },
+    "b":      { "emoji": "🅱️", "style": "danger" },
+    "start":  { "emoji": "▶️", "style": "secondary" }
+  }
+}
