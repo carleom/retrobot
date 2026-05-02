@@ -237,7 +237,19 @@ export function generateLayout(
   multiplier: number = 1,
 ): LayoutResult {
   _noneCounter = 0;
-  const scene = sceneDetector.detect(wram);
+  let scene = sceneDetector.detect(wram);
+
+  // Fallback: if battle flags are stale, check actual map location.
+  // SaveBlock1 at 0x02025A00: location.mapGroup at +0x04, location.mapNum at +0x05.
+  // Valid overworld maps have non-zero mapGroup/mapNum. Battle maps are 0/0 or similar.
+  if (scene !== Scene.OVERWORLD) {
+    const mapGroup = readU8(wram, 0x02025A04);
+    const mapNum = readU8(wram, 0x02025A05);
+    // If player is on a real map (not battle screen), force overworld
+    if (mapGroup !== 0 && mapNum !== 0 && mapGroup !== 0xFF && mapNum !== 0xFF) {
+      scene = Scene.OVERWORLD;
+    }
+  }
 
   switch (scene) {
     case Scene.BATTLE_FIGHT:

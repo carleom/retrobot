@@ -618,7 +618,7 @@ const main = async () => {
 
                   // Final check: if still in battle after polling, wait for flags to clear
                   let safety = 0;
-                  while (sceneDetector.detect(result.wram) === Scene.BATTLE_FIGHT && safety < 20) {
+                  while (sceneDetector.detect(result.wram) !== Scene.OVERWORLD && safety < 20) {
                     result = await emulateParallel(pool, result, { input: {}, duration: 30 });
                     safety++;
                   }
