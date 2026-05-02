@@ -131,11 +131,14 @@ export class EmeraldSceneDetector implements SceneDetector {
   isBattleMenuReady(wram: Uint8Array): boolean {
     const battleTypeFlags = readU32(wram, ADDR.gBattleTypeFlags);
     if (battleTypeFlags === 0) return true;
-    // Also ready if map says we are in overworld (stale battle flags)
-    const mapGroup = readU8(wram, 0x02025A04);
-    if (mapGroup !== 0 && mapGroup !== 0xFF) return true;
-    const ab = readU8(wram, ADDR.gActiveBattler);
-    return readU8(wram, ADDR.gBattleCommunication + ab) === BattleCommState.STATE_BEFORE_ACTION_CHOSEN;
+    // Check player battler (0), not active battler (may be enemy during turn)
+    const comm = readU8(wram, ADDR.gBattleCommunication);
+    // Stale flags: if comm state is invalid but we're on a real map
+    if (comm > 4) {
+      const mapNum = readU8(wram, 0x02025A05);
+      if (mapNum !== 0 && mapNum !== 0xFF) return true;
+    }
+    return comm === BattleCommState.STATE_BEFORE_ACTION_CHOSEN;
   }
 
   /**

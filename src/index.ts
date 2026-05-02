@@ -608,7 +608,7 @@ const main = async () => {
                     const ready = sceneDetector.isBattleMenuReady(result.wram);
                     if (ready) { console.log("Poll stop: menu ready at poll " + poll); break; }
                     // Periodically press A to advance text boxes (every 3 polls = ~1.5s)
-                    const input = (poll > 0 && poll % 3 === 0) ? { A: true } : {};
+                    const input = (poll > 2) ? { A: true } : {};
                     result = await emulateParallel(pool, result, { input, duration: 30 });
                   }
                   if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
