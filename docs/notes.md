@@ -1,0 +1,3 @@
+luv2share discord
+server id: 1486174963609370715
+channel id: 1499899686142869525

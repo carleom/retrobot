@@ -353,43 +353,13 @@ These items are intentionally deferred to later milestones:
 - **`EmeraldSceneDetector` exposes `isTrainerBattle()` and `isDoubleBattle()`** as utility methods for the layout generator (M3/M5) to hide Run button or adjust layout.
 - **The detector uses absolute GBA addresses** (`0x02022fec` etc.) and the `readU8/U16/U32` helpers subtract `EWRAM_BASE` (`0x02000000`) to get offsets into the WRAM buffer.
 
-## 12. Milestone 3: Lookup Tables + Dynamic Layout Generator (Completed 2025-05-01)
+## 11. Open Items
 
-See M3 details in the PRD and test results via `yarn test:layouts` (10 synthetic + live ROM, all passing).
-
-Files: `config/emerald_lookups.json` (355 moves, 377 items, 412 species), `src/layouts.ts` (layout generator with 6 scene layouts), `src/layouts/__tests__/emerald_layouts.test.ts`.
-
-## 14. Milestone 4: Macro Engine ✅ (Completed 2025-05-01)
-
-Files: `src/macros.ts` (engine core), `src/macros/emerald.ts` (6 macros: selectMove, useItem, switchPokemon, run, openBag, back), `src/macros/__tests__/emerald_macros.test.ts` (17 synthetic + live ROM, all passing).
-
-Macros use fire-and-forget model: no mid-macro scene detection, `updateButtons` flag for intermediate Discord updates (M5), one GIF at the end.
-
-## 16. Milestone 5: Wire Into Discord Bot ✅ (Completed 2025-05-01)
-
-Modified `src/index.ts` — integrated scene detector, layout generator, and macro engine.
-
-### Button Routing
-- `macro-none` → no-op placeholder
-- `macro-manual` → regenerate context-aware layout from current state
-- `macro-move-N` → execute `selectMoveMacro(N)`, encode GIF, post with layout
-- `macro-item-P-N` → execute `useItemMacro(N)`
-- `macro-switch` → navigate to switch screen, show party layout
-- `macro-switch-N` → execute `switchPokemonMacro(N)`
-- `macro-run` → execute `runMacro()`
-- Raw inputs (up/down/a/b/etc) → existing emulate() + generateLayout() for buttons
-- Multiplier changes → generateLayout() for buttons
-
-### Changes
-- New `encodeMacroRecording()` helper for GIF encoding from macro frames
-- New `buildMultiplierRows()` helper for appending multiplier buttons to layouts
-- After every interaction: scene re-detection → context-aware button rows
-- State saved to disk after both raw and macro emulation
-
-## 17. Open Items
-
-1. ~~**Exact EWRAM addresses**~~ ✅
-2. **IWRAM access** — for `gTextFlags` / `gBattleMainFunc` access
-3. ~~**Move/Item name lookup tables**~~ ✅
-4. ~~**Bag pocket pointer traversal**~~ ✅
-5. ~~**gPlayerParty**~~ ✅
+1. ~~**Exact EWRAM addresses** — build the decomp or use runtime address resolution to get precise offsets for `gBattleTypeFlags`, `gPlayerParty`, etc.~~ ✅ Done — all scene detection addresses resolved and validated.
+2. **IWRAM access** — verify if mGBA exposes IWRAM via RETRO_MEMORY_SYSTEM_RAM (id=2) or if we need `SET_MEMORY_MAPS` for `gTextFlags` / `gBattleMainFunc` access
+3. **Move/Item name lookup tables** — need to generate `emerald_lookups.json` from the decomp's data files (→ Milestone 3):
+   - Move names: `data/text/move_names.h` or `src/data/move_names.h`
+   - Item names: similar pattern
+   - Species names: `data/text/species_names.h` or equivalent
+4. **Bag pocket pointer traversal** — the `itemSlots` pointer in `BagPocket` points to dynamically allocated memory. Need to verify how to follow this from EWRAM at runtime
+5. **gPlayerParty** — address resolved (`0x020244ec`) but not yet wired into the detector. Will be used in M3 for reading move names/PP and party Pokémon names

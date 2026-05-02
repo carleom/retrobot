@@ -15,3 +15,4 @@ forever
 docker-compose.yml
 decompiled/
 roms/
+docs/notes.md
