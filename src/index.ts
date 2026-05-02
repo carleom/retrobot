@@ -506,7 +506,13 @@ const main = async () => {
                   if (rest === "macro-manual") {
                     await message.edit({
                       components: [
-                        ...buttons(info.coreType, id, parseInt(multiplier), true, info.multipliers),
+                        ...buttons(
+                          info.coreType,
+                          id,
+                          parseInt(multiplier),
+                          true,
+                          info.multipliers,
+                        ),
                       ],
                     });
                     await interaction.update({});
@@ -613,7 +619,8 @@ const main = async () => {
                   return;
                 }
 
-                // Raw input (existing flow + context-aware layout)
+                console.log("RAW: btn=" + button + " mult=" + multiplier);
+                // Raw input + context-aware layout)
                 message.channel.sendTyping();
                 const playerInputs = range(0, parseInt(multiplier)).map(() =>
                   parseInput(button),
