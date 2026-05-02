@@ -89,37 +89,50 @@ interface PartyPokemon {
 }
 
 /**
- * Decrypt a u32 from the BoxPokemon encrypted region (offsets 0x20-0x4F).
- * Each u32 is XOR'd with (personality ^ otId).
+ * Substuct ordering table (personality % 24).
+ * G=Growth(species/heldItem/exp), A=Attacks(moves/PP), E=EVs, M=Misc.
+ * Source: Bulbapedia Gen III Pokemon data substructures.
  */
-function decryptU32(wram: Uint8Array, addr: number, key: number): number {
-  return readU32(wram, addr) ^ key;
-}
+const SUBSTRUCT_ORDER = [
+  "GAEM", "GAME", "GEAM", "GEMA", "GMAE", "GMEA",
+  "AGEM", "AGME", "AEGM", "AEMG", "AMGE", "AMEG",
+  "EGAM", "EGMA", "EAGM", "EAMG", "EMGA", "EMAG",
+  "MGAE", "MGEA", "MAGE", "MAEG", "MEGA", "MEAG",
+];
 
 /** Read party Pokemon at a given slot index (0-5). */
 function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
+
   // Read unencrypted metadata for the XOR key
-  const personality = readU32(wram, base + 0x00);
-  const otId = readU32(wram, base + 0x04);
-  const key = personality ^ otId;
-  // Decrypt Substruct 0 (0x20): species (u16) | heldItem (u16)
-  const ss0 = decryptU32(wram, base + 0x20, key);
-  const species = ss0 & 0xFFFF;
-  // Decrypt Substruct 3 (0x2C): moves[0] | moves[1]
-  const ss3 = decryptU32(wram, base + 0x2C, key);
-  const move0 = ss3 & 0xFFFF;
-  const move1 = (ss3 >> 16) & 0xFFFF;
-  // Decrypt Substruct 4 (0x30): moves[2] | moves[3]
-  const ss4 = decryptU32(wram, base + 0x30, key);
-  const move2 = ss4 & 0xFFFF;
-  const move3 = (ss4 >> 16) & 0xFFFF;
-  // Decrypt Substruct 5 (0x34): pp[0] | pp[1] | pp[2] | pp[3]
-  const ss5 = decryptU32(wram, base + 0x34, key);
-  const pp0 = ss5 & 0xFF;
-  const pp1 = (ss5 >> 8) & 0xFF;
-  const pp2 = (ss5 >> 16) & 0xFF;
-  const pp3 = (ss5 >> 24) & 0xFF;
+  const personality = (readU32(wram, base + 0x00) >>> 0);
+  const otId = (readU32(wram, base + 0x04) >>> 0);
+  const key = (personality ^ otId) >>> 0;
+
+  // Decrypt all 12 u32s in the secure region (0x20-0x4F)
+  const d: number[] = [];
+  for (let o = 0x20; o < 0x50; o += 4) {
+    d.push(((readU32(wram, base + o) >>> 0) ^ key) >>> 0);
+  }
+
+  // Determine substruct ordering
+  const order = SUBSTRUCT_ORDER[personality % 24];
+  const gIdx = order.indexOf("G") * 3; // Growth = species substruct (3 u32s per slot)
+  const aIdx = order.indexOf("A") * 3; // Attacks = moves substruct (3 u32s per slot)
+
+  // Growth substruct: u32[0]=species|heldItem, u32[1]=experience, u32[2]=ppBonuses|friendship
+  const species = d[gIdx] & 0xFFFF;
+
+  // Attacks substruct: u32[0]=move0|move1, u32[1]=move2|move3, u32[2]=pp0|pp1|pp2|pp3
+  const move0 = d[aIdx] & 0xFFFF;
+  const move1 = (d[aIdx] >> 16) & 0xFFFF;
+  const move2 = d[aIdx + 1] & 0xFFFF;
+  const move3 = (d[aIdx + 1] >> 16) & 0xFFFF;
+  const pp0 = d[aIdx + 2] & 0xFF;
+  const pp1 = (d[aIdx + 2] >> 8) & 0xFF;
+  const pp2 = (d[aIdx + 2] >> 16) & 0xFF;
+  const pp3 = (d[aIdx + 2] >> 24) & 0xFF;
+
   return {
     species,
     moves: [move0, move1, move2, move3],

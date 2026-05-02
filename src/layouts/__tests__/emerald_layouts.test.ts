@@ -90,7 +90,9 @@ function setupTrainerBattle(wram: Uint8Array): void {
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
 }
 
-/** Write a party Pokémon at the given slot index. */
+/** Write a party Pokemon at the given slot index using BoxPokemon encrypted format.
+ *  With personality=0, otId=0, XOR key=0 and order=GAEM:
+ *  Growth at 0x20, Attacks at 0x2C. */
 function writePartyPokemon(
   wram: Uint8Array,
   slotIndex: number,
@@ -102,15 +104,16 @@ function writePartyPokemon(
   level: number = 50,
 ): void {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
-  writeU16(wram, base + 0x00, species);
-  writeU16(wram, base + 0x0c, moves[0]);
-  writeU16(wram, base + 0x0e, moves[1]);
-  writeU16(wram, base + 0x10, moves[2]);
-  writeU16(wram, base + 0x12, moves[3]);
-  writeU8(wram, base + 0x14, pp[0]);
-  writeU8(wram, base + 0x15, pp[1]);
-  writeU8(wram, base + 0x16, pp[2]);
-  writeU8(wram, base + 0x17, pp[3]);
+  // personality=0, otId=0 -> XOR key=0, substruct order=GAEM (index 0)
+  writeU32(wram, base + 0x00, 0);
+  writeU32(wram, base + 0x04, 0);
+  // Growth substruct at 0x20: species|heldItem
+  writeU32(wram, base + 0x20, species);
+  // Attacks substruct at 0x2C-0x37
+  writeU32(wram, base + 0x2C, moves[0] | (moves[1] << 16));
+  writeU32(wram, base + 0x30, moves[2] | (moves[3] << 16));
+  writeU32(wram, base + 0x34, pp[0] | (pp[1] << 8) | (pp[2] << 16) | (pp[3] << 24));
+  // Unencrypted battle stats
   writeU8(wram, base + 0x54, level);
   writeU16(wram, base + 0x56, currentHp);
   writeU16(wram, base + 0x58, maxHp);
