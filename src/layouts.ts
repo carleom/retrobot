@@ -357,6 +357,7 @@ function buildBattleFight(
   multiplier: number,
 ): ActionRowBuilder[] {
   const isTrainer = sceneDetector.isTrainerBattle(wram);
+  const activePkmn = getActivePokemon(wram);
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: Moves (max 4, with PP)
@@ -509,7 +510,7 @@ export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuil
     const buttons: ButtonBuilder[] = [];
     for (let col = 0; col < 3; col++) {
       const slotIdx = rowIdx * 3 + col;
-
+      const pkmn = readPartyPokemon(wram, slotIdx);
       if (pkmn.species === 0) {
         // Empty slot
         buttons.push(
