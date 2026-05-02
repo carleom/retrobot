@@ -94,7 +94,7 @@ export function useItemMacro(slotIndex: number = 0): Macro {
     { ...RIGHT },
     { ...idle(6) },
     { ...A },
-    { ...idle(20) },
+    { ...idle(60) },
   ];
 
   for (let i = 0; i < slotIndex; i++) {
@@ -105,7 +105,7 @@ export function useItemMacro(slotIndex: number = 0): Macro {
     { ...A, updateButtons: true },
     { ...idle(4) },
     { ...A },
-    { ...idle(20) },
+    { ...idle(60) },
     { ...idle(60) },
   );
   return steps;
@@ -123,7 +123,7 @@ export function switchPokemonMacro(partySlot: number): Macro {
     { ...DOWN },
     { ...idle(6) },
     { ...A },
-    { ...idle(20) },
+    { ...idle(60) },
   ];
 
   for (let i = 0; i < partySlot; i++) {
@@ -183,7 +183,7 @@ export function openBagMacro(): Macro {
     { ...RIGHT },
     { ...idle(6) },
     { ...A },
-    { ...idle(20) },
+    { ...idle(60) },
   ];
 }
 
