@@ -81,6 +81,77 @@ const pool = new Piscina({
   ...(MAX_WORKERS == -1 ? {} : { maxThreads: MAX_WORKERS }),
 });
 
+/** Build multiplier button rows for appending to context-aware layouts. */
+const buildMultiplierRows = (id: string, multiplier: number, enabledMultipliers: number[], enabled: boolean): any[] => {
+  const rows: any[] = [];
+  const m = [...enabledMultipliers];
+  if (m.length > 0) {
+    rows.push(new ActionRowBuilder().addComponents(m.splice(0, 5).map((n: number) => multiplierButton(id, n, multiplier, enabled))));
+  }
+  if (m.length > 0) {
+    rows.push(new ActionRowBuilder().addComponents(m.map((n: number) => multiplierButton(id, n, multiplier, enabled))));
+  }
+  return rows;
+};
+
+/** Encode macro frames to GIF/MP4. Simplified from emulate.ts. */
+const encodeMacroRecording = async (frames: Frame[], coreType: CoreType): Promise<{ recording: Buffer; recordingName: string }> => {
+  const importantFrames: (Frame & { renderTime: number })[] = [];
+  let lastFrame: Frame | undefined;
+  let durationSinceFrame = 0;
+  for (let i = 0; i < frames.length; i++) {
+    if (i === 0 || durationSinceFrame >= 60 / RECORDING_FRAMERATE) {
+      if (!arraysEqual(frames[i].buffer, lastFrame?.buffer)) {
+        importantFrames.push({ ...frames[i], renderTime: i });
+        lastFrame = frames[i];
+        durationSinceFrame = 0;
+      }
+    } else { durationSinceFrame++; }
+  }
+  if (lastFrame && !arraysEqual(last(frames)?.buffer, lastFrame?.buffer)) {
+    importantFrames.push({ ...last(frames)!, renderTime: frames.length });
+  }
+  if (importantFrames.length === 0) throw new Error("No frames");
+  const tmpFrameDir = tmp.dirSync({ unsafeCleanup: true });
+  const { width, height } = last(importantFrames)!;
+  const images = await Promise.all(importantFrames.map((frame) => {
+    const file = path.join(tmpFrameDir.name, "frame-" + frame.renderTime + ".bmp");
+    return new Promise<{ file: string; frameNumber: number }>((res, rej) =>
+      fs.writeFile(file, Buffer.from(encode(rgb565toRaw(frame), [width, height], "bmp")), (err) => {
+        if (err) rej(err); else res({ file, frameNumber: frame.renderTime });
+      }),
+    );
+  }));
+  let framesTxt = "";
+  for (let i = 0; i < images.length; i++) {
+    framesTxt += "file '" + images[i].file + "'\n";
+    const next = images[i + 1];
+    if (next) framesTxt += "duration " + ((next.frameNumber - images[i].frameNumber) / 60) + "\n";
+  }
+  framesTxt += "duration " + (1 / 60) + "\nfile '" + last(images)!.file + "'\nduration 5\nfile '" + last(images)!.file + "'\n";
+  const tmpFramesList = tmp.fileSync({ discardDescriptor: true });
+  fs.writeFileSync(tmpFramesList.name, framesTxt);
+  const { name: outputName } = tmp.fileSync();
+  const gifOutput = outputName + ".gif";
+  const mp4Output = outputName + ".mp4";
+  let output = gifOutput;
+  await new Promise<void>((res, rej) =>
+    ffmpeg().input(tmpFramesList.name).addInputOption("-safe", "0").inputFormat("concat")
+      .addOption("-filter_complex", "scale=2*iw:2*ih:flags=neighbor,split=2 [a][b]; [a] palettegen= [pal]; [b] fifo [b]; [b] [pal] paletteuse=dither=bayer:bayer_scale=5")
+      .output(gifOutput).on("error", (err: any, stdout: any, stderr: any) => { console.error(stderr); rej(err); }).on("end", res).run(),
+  );
+  if (fs.statSync(gifOutput).size > 8 * 1024 * 1024) {
+    output = mp4Output;
+    await new Promise<void>((res, rej) => ffmpeg().input(gifOutput).output(mp4Output).on("error", (err: any, stdout: any, stderr: any) => { console.error(stderr); rej(err); }).on("end", res).run());
+  }
+  const recordingBuffer = fs.readFileSync(output);
+  shelljs.rm("-rf", gifOutput);
+  shelljs.rm("-rf", mp4Output);
+  tmpFrameDir.removeCallback();
+  tmpFramesList.removeCallback();
+  return { recording: recordingBuffer, recordingName: path.basename(output) };
+};
+
 const main = async () => {
   const client = new Client({
     intents: [
@@ -326,14 +397,31 @@ const main = async () => {
               try {
                 // Multiplier change: re-read WRAM and regenerate layout
                 if (isNumeric(button)) {
-                  const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                  const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                  const { wram } = await emulateParallel(pool, {
-                    coreType: info.coreType, game: gameBytes, state: stateBytes,
-                    frames: [], gameHash: undefined, stateHash: undefined,
-                  }, { input: {}, duration: 1 });
+                  const gameBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, info.game)),
+                  );
+                  const stateBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, "state.sav")),
+                  );
+                  const { wram } = await emulateParallel(
+                    pool,
+                    {
+                      coreType: info.coreType,
+                      game: gameBytes,
+                      state: stateBytes,
+                      frames: [],
+                      gameHash: undefined,
+                      stateHash: undefined,
+                    },
+                    { input: {}, duration: 1 },
+                  );
                   const { rows } = generateLayout(wram, id, parseInt(button));
-                  const mRows = buildMultiplierRows(id, parseInt(button), info.multipliers, true);
+                  const mRows = buildMultiplierRows(
+                    id,
+                    parseInt(button),
+                    info.multipliers,
+                    true,
+                  );
                   await message.edit({ components: [...rows, ...mRows] });
                   await interaction.update({});
                   return;
@@ -348,18 +436,42 @@ const main = async () => {
                   const rest = parts.slice(1).join("-");
 
                   // No-op placeholders
-                  if (rest.startsWith("macro-none")) { await interaction.update({}); return; }
+                  if (rest.startsWith("macro-none")) {
+                    await interaction.update({});
+                    return;
+                  }
 
                   // Manual toggle: regenerate context-aware layout
                   if (rest === "macro-manual") {
-                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                    const { wram } = await emulateParallel(pool, {
-                      coreType: info.coreType, game: gameBytes, state: stateBytes,
-                      frames: [], gameHash: undefined, stateHash: undefined,
-                    }, { input: {}, duration: 1 });
-                    const { rows } = generateLayout(wram, id, parseInt(multiplier));
-                    const mRows = buildMultiplierRows(id, parseInt(multiplier), info.multipliers, true);
+                    const stateBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const gameBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
+                    const { wram } = await emulateParallel(
+                      pool,
+                      {
+                        coreType: info.coreType,
+                        game: gameBytes,
+                        state: stateBytes,
+                        frames: [],
+                        gameHash: undefined,
+                        stateHash: undefined,
+                      },
+                      { input: {}, duration: 1 },
+                    );
+                    const { rows } = generateLayout(
+                      wram,
+                      id,
+                      parseInt(multiplier),
+                    );
+                    const mRows = buildMultiplierRows(
+                      id,
+                      parseInt(multiplier),
+                      info.multipliers,
+                      true,
+                    );
                     await message.edit({ components: [...rows, ...mRows] });
                     await interaction.update({});
                     return;
@@ -367,19 +479,41 @@ const main = async () => {
 
                   // Navigate to switch screen
                   if (rest === "macro-switch") {
-                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const stateBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const gameBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
                     const navCtx: MacroContext = {
-                      coreType: info.coreType, game: gameBytes, state: stateBytes,
-                      frames: [], wram: new Uint8Array(0), av_info: {},
+                      coreType: info.coreType,
+                      game: gameBytes,
+                      state: stateBytes,
+                      frames: [],
+                      wram: new Uint8Array(0),
+                      av_info: {},
                     };
                     const navResult = await executeMacro(pool, navCtx, [
-                      { input: { DOWN: true }, duration: 4 }, { input: {}, duration: 6 },
-                      { input: { A: true }, duration: 4 }, { input: {}, duration: 20 },
+                      { input: { DOWN: true }, duration: 4 },
+                      { input: {}, duration: 6 },
+                      { input: { A: true }, duration: 4 },
+                      { input: {}, duration: 20 },
                     ]);
-                    fs.writeFileSync(path.resolve("data", id, "state.sav"), navResult.state);
-                    const { rows: swRows } = generateLayout(navResult.wram, id, 1);
-                    await message.edit({ components: [...swRows, ...buildMultiplierRows(id, 1, info.multipliers, true)] });
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      navResult.state,
+                    );
+                    const { rows: swRows } = generateLayout(
+                      navResult.wram,
+                      id,
+                      1,
+                    );
+                    await message.edit({
+                      components: [
+                        ...swRows,
+                        ...buildMultiplierRows(id, 1, info.multipliers, true),
+                      ],
+                    });
                     await interaction.update({});
                     return;
                   }
@@ -406,19 +540,37 @@ const main = async () => {
                     return;
                   }
 
-                  const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                  const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
+                  const gameBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, info.game)),
+                  );
+                  const stateBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, "state.sav")),
+                  );
                   const ctx: MacroContext = {
-                    coreType: info.coreType, game: gameBytes, state: stateBytes,
-                    frames: [], wram: new Uint8Array(0), av_info: {},
+                    coreType: info.coreType,
+                    game: gameBytes,
+                    state: stateBytes,
+                    frames: [],
+                    wram: new Uint8Array(0),
+                    av_info: {},
                   };
                   const result = await executeMacro(pool, ctx, macro);
-                  const { recording, recordingName } = await encodeMacroRecording(result.frames, info.coreType);
-                  fs.writeFileSync(path.resolve("data", id, "state.sav"), result.state);
+                  const { recording, recordingName } =
+                    await encodeMacroRecording(result.frames, info.coreType);
+                  fs.writeFileSync(
+                    path.resolve("data", id, "state.sav"),
+                    result.state,
+                  );
                   const { rows: macRows } = generateLayout(result.wram, id, 1);
-                  const macMRows = buildMultiplierRows(id, 1, info.multipliers, true);
+                  const macMRows = buildMultiplierRows(
+                    id,
+                    1,
+                    info.multipliers,
+                    true,
+                  );
                   await message.channel.send({
-                    content: player.nickname || player.displayName + ": " + macroLabel,
+                    content:
+                      player.nickname || player.displayName + ": " + macroLabel,
                     files: [{ attachment: recording, name: recordingName }],
                     components: [...macRows, ...macMRows],
                   });
@@ -427,18 +579,51 @@ const main = async () => {
 
                 // Raw input (existing flow + context-aware layout)
                 message.channel.sendTyping();
-                const playerInputs = range(0, parseInt(multiplier)).map(() => parseInput(button));
-                if (playerInputs.length === 0) { await interaction.update({}); return; }
-                const game2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                const oldState2 = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                const { recording: recRaw, recordingName: recNameRaw, state: newState, wram: rawWram } =
-                  await emulate(pool, info.coreType, game2, oldState2, info, playerInputs);
-                fs.writeFileSync(path.resolve("data", id, "state.sav"), newState);
+                const playerInputs = range(0, parseInt(multiplier)).map(() =>
+                  parseInput(button),
+                );
+                if (playerInputs.length === 0) {
+                  await interaction.update({});
+                  return;
+                }
+                const game2 = new Uint8Array(
+                  fs.readFileSync(path.resolve("data", id, info.game)),
+                );
+                const oldState2 = new Uint8Array(
+                  fs.readFileSync(path.resolve("data", id, "state.sav")),
+                );
+                const {
+                  recording: recRaw,
+                  recordingName: recNameRaw,
+                  state: newState,
+                  wram: rawWram,
+                } = await emulate(
+                  pool,
+                  info.coreType,
+                  game2,
+                  oldState2,
+                  info,
+                  playerInputs,
+                );
+                fs.writeFileSync(
+                  path.resolve("data", id, "state.sav"),
+                  newState,
+                );
                 const { rows: rawRows } = generateLayout(rawWram, id, 1);
-                const rawMRows = buildMultiplierRows(id, 1, info.multipliers, true);
+                const rawMRows = buildMultiplierRows(
+                  id,
+                  1,
+                  info.multipliers,
+                  true,
+                );
                 await message.channel.send({
-                  content: player.nickname || player.displayName + " pressed " + joyToWord(first(playerInputs)) +
-                    (parseInt(multiplier) > 1 ? " x" + multiplier : "") + "...",
+                  content:
+                    player.nickname ||
+                    player.displayName +
+                      " pressed " +
+                      joyToWord(first(playerInputs)) +
+                      (parseInt(multiplier) > 1 ? " x" + multiplier : "") +
+                      "...",
                   files: [{ attachment: recRaw, name: recNameRaw }],
                   components: [...rawRows, ...rawMRows],
                 });
