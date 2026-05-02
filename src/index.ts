@@ -638,6 +638,7 @@ const main = async () => {
                       navRes = await emulateParallel(pool, navRes, { input: { UP: true }, duration: 4 });
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
+                    const targetSlot = parseInt(parts[3]);
                     // Navigate DOWN to target slot
                     for (let i = 0; i < targetSlot; i++) {
                       navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
