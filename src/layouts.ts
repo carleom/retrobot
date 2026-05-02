@@ -7,19 +7,11 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector } from "./scenes/emerald";
-import {
-  readU8,
-  readU16,
-  readU32,
-} from "./scenes";
+import { readU8, readU16, readU32 } from "./scenes";
 
 // ── Lookup Tables ────────────────────────────────────────────────────────────
 
@@ -29,7 +21,12 @@ interface Lookups {
   species: Record<string, string>;
 }
 
-const lookupsPath = path.join(__dirname, "..", "config", "emerald_lookups.json");
+const lookupsPath = path.join(
+  __dirname,
+  "..",
+  "config",
+  "emerald_lookups.json",
+);
 const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 
 function moveName(id: number): string {
@@ -188,6 +185,12 @@ export interface LayoutResult {
 
 const sceneDetector = new EmeraldSceneDetector();
 
+/** Counter for unique placeholder button IDs (Discord requires unique custom IDs). */
+let _noneCounter = 0;
+function noneId(gameId: string): string {
+  return _noneCounter++ + "-" + gameId + "-macro-none";
+}
+
 /**
  * Generate Discord button rows for the current game state.
  *
@@ -201,6 +204,7 @@ export function generateLayout(
   gameId: string,
   multiplier: number = 1,
 ): LayoutResult {
+  _noneCounter = 0;
   const scene = sceneDetector.detect(wram);
 
   switch (scene) {
@@ -222,7 +226,10 @@ export function generateLayout(
 
 // ── Overworld Layout ─────────────────────────────────────────────────────────
 
-function buildOverworld(gameId: string, multiplier: number): ActionRowBuilder[] {
+function buildOverworld(
+  gameId: string,
+  multiplier: number,
+): ActionRowBuilder[] {
   const m = multiplier;
   return [
     row(
@@ -288,7 +295,7 @@ function buildBattleFight(
     // Pad to 4 buttons
     while (ballButtons.length < 4) {
       ballButtons.push(
-        btn(`${gameId}-macro-none`, "—", ButtonStyle.Secondary, true),
+        btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
       );
     }
     rows.push(row(...ballButtons));
@@ -307,7 +314,7 @@ function buildBattleFight(
   });
   while (itemButtons.length < 4) {
     itemButtons.push(
-      btn(`${gameId}-macro-none`, "—", ButtonStyle.Secondary, true),
+      btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
     );
   }
   rows.push(row(...itemButtons));
@@ -357,11 +364,7 @@ function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   rows.push(row(...moveButtons));
 
   // Row 2: Back to Fight Menu
-  rows.push(
-    row(
-      btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary),
-    ),
-  );
+  rows.push(row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)));
 
   return rows;
 }
@@ -388,17 +391,13 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   });
   while (itemButtons.length < 4) {
     itemButtons.push(
-      btn(`${gameId}-macro-none`, "—", ButtonStyle.Secondary, true),
+      btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
     );
   }
   rows.push(row(...itemButtons));
 
   // Row 2: Back, Use
-  rows.push(
-    row(
-      btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary),
-    ),
-  );
+  rows.push(row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)));
 
   return rows;
 }
@@ -418,12 +417,7 @@ function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
       if (pkmn.species === 0) {
         // Empty slot
         buttons.push(
-          btn(
-            `${gameId}-macro-none`,
-            "— empty —",
-            ButtonStyle.Secondary,
-            true,
-          ),
+          btn(`noneId(gameId)`, "— empty —", ButtonStyle.Secondary, true),
         );
       } else if (pkmn.currentHp === 0) {
         // Fainted — can't switch to it
@@ -453,9 +447,7 @@ function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
   // Back button
   rows.push(
-    row(
-      btn(`${gameId}-b-1`, "⬅️ Back to Battle", ButtonStyle.Secondary),
-    ),
+    row(btn(`${gameId}-b-1`, "⬅️ Back to Battle", ButtonStyle.Secondary)),
   );
 
   return rows;
