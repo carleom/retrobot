@@ -263,15 +263,9 @@ export function generateLayout(
   // SaveBlock1 at 0x02025A00: location.mapGroup at +0x04, location.mapNum at +0x05.
   // Valid overworld maps have non-zero mapGroup/mapNum. Battle maps are 0/0 or similar.
   if (scene !== Scene.OVERWORLD) {
-    const mapGroup = readU8(wram, 0x02025a04);
     const mapNum = readU8(wram, 0x02025a05);
     // If player is on a real map (not battle screen), force overworld
-    if (
-      mapGroup !== 0 &&
-      mapNum !== 0 &&
-      mapGroup !== 0xff &&
-      mapNum !== 0xff
-    ) {
+    if (mapNum !== 0 && mapNum !== 0xff) {
       scene = Scene.OVERWORLD;
     }
   }
