@@ -204,7 +204,9 @@ function getActivePokemon(wram: Uint8Array): PartyPokemon {
   const idx = readU16(wram, 0x0202406e + battler * 2);
   // Fall back to slot 0 if index is invalid or battle just started
   const slot = (idx >= 0 && idx <= 5) ? idx : 0;
-  return readPartyPokemon(wram, slot);
+  const pkmn = readPartyPokemon(wram, slot);
+  console.log('getActivePokemon: battler=' + battler + ' idx=' + idx + ' slot=' + slot + ' species=' + pkmn.species);
+  return pkmn;
 }
 
 // ── Bag Data Reader ──────────────────────────────────────────────────────────
