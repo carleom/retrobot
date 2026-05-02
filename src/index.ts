@@ -613,7 +613,6 @@ const main = async () => {
                   return;
                 }
 
-                console.log("RAW: btn=" + button + " mult=" + multiplier);
                 // Raw input + context-aware layout)
                 message.channel.sendTyping();
                 const playerInputs = range(0, parseInt(multiplier)).map(() =>
