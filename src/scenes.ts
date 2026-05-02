@@ -90,7 +90,7 @@ export function readU32(wram: Uint8Array, absoluteAddress: number): number {
     wram[offset] |
     (wram[offset + 1] << 8) |
     (wram[offset + 2] << 16) |
-    (wram[offset + 3] << 24)
+    (wram[offset + 3] << 24) >>> 0
   );
 }
 
