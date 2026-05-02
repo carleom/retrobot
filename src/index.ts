@@ -713,7 +713,6 @@ const main = async () => {
                     );
 
                     const idxAfter = wrSw[0x0202406e - 0x02000000] | (wrSw[0x0202406f - 0x02000000] << 8);
-                    console.log('After switch: gBattlerPartyIndexes[0]=' + idxAfter);
                     const { rows: swRows2 } = generateLayout(wrSw, id, 1);
                     await message.channel.send({
                       content:
