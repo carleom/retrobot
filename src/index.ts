@@ -63,7 +63,8 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  switchPokemonMacro, switchFromPartyMacro,
+  switchPokemonMacro,
+  switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
@@ -359,17 +360,29 @@ const main = async () => {
             const guild = interaction.guild;
             if (!guild) return;
             const emojiDir = path.resolve("emojis");
-            const files = fs.readdirSync(emojiDir).filter((f: string) => f.endsWith(".png"));
+            const files = fs
+              .readdirSync(emojiDir)
+              .filter((f: string) => f.endsWith(".png"));
             const ids: Record<string, string> = {};
             for (const file of files) {
               const name = file.replace(".png", "");
               try {
-                const emoji = await guild.emojis.create({ name, attachment: path.join(emojiDir, file) });
+                const emoji = await guild.emojis.create({
+                  name,
+                  attachment: path.join(emojiDir, file),
+                });
                 ids[name] = emoji.id;
-              } catch (e) { console.error("Failed to upload " + name, e); }
+              } catch (e) {
+                console.error("Failed to upload " + name, e);
+              }
             }
-            fs.writeFileSync("config/emoji_ids.json", JSON.stringify(ids, null, 2));
-            await interaction.editReply({ content: "Uploaded " + files.length + " emojis!" });
+            fs.writeFileSync(
+              "config/emoji_ids.json",
+              JSON.stringify(ids, null, 2),
+            );
+            await interaction.editReply({
+              content: "Uploaded " + files.length + " emojis!",
+            });
             return;
           }
           if (interaction.commandName == "settings") {
@@ -548,7 +561,7 @@ const main = async () => {
                   }
 
                   // Navigate to switch screen
-                  if (rest === "macro-switch") {
+                  console.log("SWITCH clicked, rest=" + rest); if (rest === "macro-switch") {
                     const stateBytes = new Uint8Array(
                       fs.readFileSync(path.resolve("data", id, "state.sav")),
                     );
@@ -672,10 +685,18 @@ const main = async () => {
                     path.resolve("data", id, "state.sav"),
                     finalState,
                   );
-                  const { rows: macRows, scene: macScene } = generateLayout(finalWram, id, 1);
-                  const macComponents = macScene === Scene.OVERWORLD
-                    ? [...macRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
-                    : macRows;
+                  const { rows: macRows, scene: macScene } = generateLayout(
+                    finalWram,
+                    id,
+                    1,
+                  );
+                  const macComponents =
+                    macScene === Scene.OVERWORLD
+                      ? [
+                          ...macRows,
+                          ...buildMultiplierRows(id, 1, info.multipliers, true),
+                        ]
+                      : macRows;
                   await message.channel.send({
                     content:
                       player.nickname || player.displayName + ": " + macroLabel,
@@ -717,10 +738,18 @@ const main = async () => {
                   path.resolve("data", id, "state.sav"),
                   newState,
                 );
-                const { rows: rawRows, scene: rawScene } = generateLayout(rawWram, id, 1);
-                const rawComponents = rawScene === Scene.OVERWORLD
-                  ? [...rawRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
-                  : rawRows;
+                const { rows: rawRows, scene: rawScene } = generateLayout(
+                  rawWram,
+                  id,
+                  1,
+                );
+                const rawComponents =
+                  rawScene === Scene.OVERWORLD
+                    ? [
+                        ...rawRows,
+                        ...buildMultiplierRows(id, 1, info.multipliers, true),
+                      ]
+                    : rawRows;
                 await message.channel.send({
                   content:
                     player.nickname ||
