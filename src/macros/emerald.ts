@@ -56,23 +56,25 @@ export function selectMoveMacro(slotIndex: number): Macro {
   const steps: MacroStep[] = [
     // Select FIGHT (cursor defaults there)
     { ...A },
-    { ...idle(20) }, // Wait for move menu to open
+    { ...idle(40) }, // Wait for move menu to open
+    // Reset cursor to top-left (slot 0) regardless of starting position
+    { ...LEFT }, { ...idle(4) },
+    { ...LEFT }, { ...idle(4) },
+    { ...UP },   { ...idle(4) },
+    { ...UP },   { ...idle(4) },
   ];
 
-  // Navigate to the desired move slot
-  switch (slotIndex) {
-    case 0: /* already on slot 0 */ break;
-    case 1: steps.push({ ...RIGHT }, { ...idle(6) }); break;
-    case 2: steps.push({ ...DOWN }, { ...idle(6) }); break;
-    case 3:
-      steps.push({ ...DOWN }, { ...idle(6) });
-      steps.push({ ...RIGHT }, { ...idle(6) });
-      break;
+  // Navigate from slot 0 to the desired move slot
+  if (slotIndex === 1 || slotIndex === 3) {
+    steps.push({ ...RIGHT }, { ...idle(4) });
+  }
+  if (slotIndex === 2 || slotIndex === 3) {
+    steps.push({ ...DOWN }, { ...idle(4) });
   }
 
   steps.push(
-    { ...A, updateButtons: true }, // Select the move (update buttons to move select view)
-    { ...idle(30) },              // Wait for full attack animation
+    { ...A, updateButtons: true }, // Select the move
+    { ...idle(30) },              // Initial wait (polling handles the rest)
   );
 
   return steps;
