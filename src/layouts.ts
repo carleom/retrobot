@@ -282,10 +282,10 @@ export function generateLayout(
   _noneCounter = 0;
   let scene = sceneDetector.detect(wram); console.log("generateLayout: scene=" + scene + " mapNum=" + readU8(wram, 0x02025a05));
 
-  // Fallback: if on a real map, force overworld regardless of battle flags
+  // If battle has ended (gBattleOutcome != 0), force overworld
   if (scene !== Scene.OVERWORLD) {
-    const mapNum = readU8(wram, 0x02025a05);
-    if (mapNum !== 0 && mapNum !== 0xff) {
+    const outcome = readU8(wram, 0x0202433a);
+    if (outcome !== 0) {
       scene = Scene.OVERWORLD;
     }
   }
