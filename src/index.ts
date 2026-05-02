@@ -607,19 +607,22 @@ const main = async () => {
                   for (let poll = 0; poll < 40; poll++) {
                     const ready = sceneDetector.isBattleMenuReady(result.wram);
                     if (ready) { console.log("Poll stop: menu ready at poll " + poll); break; }
-                    result = await emulateParallel(pool, result, { input: {}, duration: 30 });
+                    // Periodically press A to advance text boxes (every 3 polls = ~1.5s)
+                    const input = (poll > 0 && poll % 3 === 0) ? { A: true } : {};
+                    result = await emulateParallel(pool, result, { input, duration: 30 });
                   }
                   if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
 
                   // If battle ended, wait extra for post-battle animations
                   if (sceneDetector.detect(result.wram) === Scene.OVERWORLD) {
-                    result = await emulateParallel(pool, result, { input: {}, duration: 120 });
+                    result = await emulateParallel(pool, result, { input: { A: true }, duration: 120 });
                   }
 
                   // Final check: if still in battle after polling, wait for flags to clear
                   let safety = 0;
                   while (sceneDetector.detect(result.wram) !== Scene.OVERWORLD && safety < 20) {
-                    result = await emulateParallel(pool, result, { input: {}, duration: 30 });
+                    // Press A to advance text boxes
+                    result = await emulateParallel(pool, result, { input: { A: true }, duration: 30 });
                     safety++;
                   }
 
