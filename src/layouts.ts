@@ -359,7 +359,7 @@ function buildBattleFight(
       const name = itemName(id);
       return btn(
         `${gameId}-macro-item-1-${id}`,
-        qty > 0 ? name : "—",
+        name,
         ButtonStyle.Secondary,
         qty === 0,
       );
@@ -374,7 +374,7 @@ function buildBattleFight(
     const name = itemName(id);
     return btn(
       `${gameId}-macro-item-0-${id}`,
-      qty > 0 ? name : "—",
+      name,
       ButtonStyle.Secondary,
       qty === 0,
     );
