@@ -217,9 +217,9 @@ function btn(
 ): ButtonBuilder {
   const b = new ButtonBuilder()
     .setCustomId(customId)
-    .setLabel(label)
     .setStyle(style)
     .setDisabled(disabled);
+  if (label) b.setLabel(label);
   if (emoji) b.setEmoji(emoji);
   return b;
 }
