@@ -357,7 +357,7 @@ function buildBattleFight(
   multiplier: number,
 ): ActionRowBuilder[] {
   const isTrainer = sceneDetector.isTrainerBattle(wram);
-  const activePkmn = getActivePokemon(wram);
+  const activePkmn = getActivePokemon(wram); console.log("Active mon: species=" + activePkmn.species + " moves=" + JSON.stringify(activePkmn.moves) + " pp=" + JSON.stringify(activePkmn.pp));
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: Moves (max 4, with PP)
@@ -441,7 +441,7 @@ function buildBattleFight(
 // ── Move Select Layout ───────────────────────────────────────────────────────
 
 function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
-  const activePkmn = getActivePokemon(wram);
+  const activePkmn = getActivePokemon(wram); console.log("Active mon: species=" + activePkmn.species + " moves=" + JSON.stringify(activePkmn.moves) + " pp=" + JSON.stringify(activePkmn.pp));
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: 4 move buttons (name only, no PP — the game shows PP on-screen)
