@@ -611,9 +611,16 @@ const main = async () => {
                   }
                   if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
 
-                  // If battle ended (overworld), wait extra for post-battle animations
+                  // If battle ended, wait extra for post-battle animations
                   if (sceneDetector.detect(result.wram) === Scene.OVERWORLD) {
                     result = await emulateParallel(pool, result, { input: {}, duration: 120 });
+                  }
+
+                  // Final check: if still in battle after polling, wait for flags to clear
+                  let safety = 0;
+                  while (sceneDetector.detect(result.wram) === Scene.BATTLE_FIGHT && safety < 20) {
+                    result = await emulateParallel(pool, result, { input: {}, duration: 30 });
+                    safety++;
                   }
 
                   const { recording, recordingName } =
