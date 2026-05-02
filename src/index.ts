@@ -64,7 +64,7 @@ import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
-  switchFromPartyMacro,
+  navigateToPartyMacro, switchFromPartyMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
