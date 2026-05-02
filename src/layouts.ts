@@ -261,7 +261,7 @@ export function generateLayout(
 
   // Fallback: if battle state looks stale (invalid comm state), check map location.
   if (scene !== Scene.OVERWORLD) {
-    const commState = readU8(wram, 0x02024332 + readU8(wram, 0x02024064));
+    const commState = readU8(wram, 0x02024332);
     // Valid battle states are 0-4. If state is out of range, flags may be stale.
     if (commState > 4) {
       const mapNum = readU8(wram, 0x02025a05);
