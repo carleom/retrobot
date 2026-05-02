@@ -602,10 +602,12 @@ const main = async () => {
 
                   // Poll idle frames until battle menu reappears (or overworld)
                   const sceneDetector = new EmeraldSceneDetector();
-                  for (let poll = 0; poll < 20; poll++) {
-                    if (sceneDetector.isBattleMenuReady(result.wram)) break;
+                  for (let poll = 0; poll < 40; poll++) {
+                    const ready = sceneDetector.isBattleMenuReady(result.wram);
+                    if (ready) { console.log("Poll stop: menu ready at poll " + poll); break; }
                     result = await emulateParallel(pool, result, { input: {}, duration: 30 });
                   }
+                  if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
 
                   const { recording, recordingName } =
                     await encodeMacroRecording(result.frames, info.coreType);
