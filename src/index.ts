@@ -506,13 +506,7 @@ const main = async () => {
                   if (rest === "macro-manual") {
                     await message.edit({
                       components: [
-                        ...buttons(
-                          info.coreType,
-                          id,
-                          parseInt(multiplier),
-                          true,
-                          info.multipliers,
-                        ),
+                        ...buttons(info.coreType, id, 1, true, info.multipliers),
                       ],
                     });
                     await interaction.update({});
