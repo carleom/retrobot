@@ -290,7 +290,7 @@ export function generateLayout(
 
 // ── Overworld Layout ─────────────────────────────────────────────────────────
 
-function buildOverworld(
+export function buildOverworld(
   gameId: string,
   multiplier: number,
 ): ActionRowBuilder[] {

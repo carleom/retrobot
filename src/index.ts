@@ -51,7 +51,7 @@ import {
   DirectionPress,
 } from "./gameInfo";
 import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
-import { generateLayout } from "./layouts";
+import { generateLayout, buildOverworld } from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector } from "./scenes/emerald";
 import { executeMacro, MacroContext, Macro } from "./macros";
@@ -621,8 +621,9 @@ const main = async () => {
                   // Final check: if still in battle after polling, wait for flags to clear
                   let safety = 0;
                   while (sceneDetector.detect(result.wram) !== Scene.OVERWORLD && safety < 20) {
-                    // Press A to advance text boxes
-                    result = await emulateParallel(pool, result, { input: { A: true }, duration: 30 });
+                    // Only press A if still in battle (avoid unwanted inputs in overworld)
+                    const isBattle = sceneDetector.detect(result.wram) === Scene.BATTLE_FIGHT;
+                    result = await emulateParallel(pool, result, { input: isBattle ? { A: true } : {}, duration: 30 });
                     safety++;
                   }
 
@@ -632,7 +633,11 @@ const main = async () => {
                     path.resolve("data", id, "state.sav"),
                     result.state,
                   );
-                  const { rows: macRows } = generateLayout(result.wram, id, 1);
+                  let { rows: macRows, scene: macScene } = generateLayout(result.wram, id, 1);
+                  // Final safety: if layout is still battle but wait loops finished, force overworld
+                  if (macScene === Scene.BATTLE_FIGHT) {
+                    macRows = buildOverworld(id, 1);
+                  }
                   const macMRows = buildMultiplierRows(
                     id,
                     1,
