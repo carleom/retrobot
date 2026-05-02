@@ -10,7 +10,8 @@
     "service:stop": "cross-env FOREVER_ROOT=./forever forever stop retrobot",
     "test:memory": "ts-node src/test_memory.ts",
     "test:scenes": "ts-node src/scenes/__tests__/emerald.test.ts",
-    "test:layouts": "ts-node src/layouts/__tests__/emerald_layouts.test.ts"
+    "test:layouts": "ts-node src/layouts/__tests__/emerald_layouts.test.ts",
+    "test:macros": "ts-node src/macros/__tests__/emerald_macros.test.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

@@ -359,10 +359,16 @@ See M3 details in the PRD and test results via `yarn test:layouts` (10 synthetic
 
 Files: `config/emerald_lookups.json` (355 moves, 377 items, 412 species), `src/layouts.ts` (layout generator with 6 scene layouts), `src/layouts/__tests__/emerald_layouts.test.ts`.
 
-## 13. Open Items
+## 14. Milestone 4: Macro Engine ✅ (Completed 2025-05-01)
+
+Files: `src/macros.ts` (engine core), `src/macros/emerald.ts` (6 macros: selectMove, useItem, switchPokemon, run, openBag, back), `src/macros/__tests__/emerald_macros.test.ts` (17 synthetic + live ROM, all passing).
+
+Macros use fire-and-forget model: no mid-macro scene detection, `updateButtons` flag for intermediate Discord updates (M5), one GIF at the end.
+
+## 15. Open Items
 
 1. ~~**Exact EWRAM addresses**~~ ✅
 2. **IWRAM access** — for `gTextFlags` / `gBattleMainFunc` access
-3. ~~**Move/Item name lookup tables**~~ ✅ — `emerald_lookups.json` generated
-4. ~~**Bag pocket pointer traversal**~~ ✅ — direct SaveBlock1 addresses, XOR decryption
-5. ~~**gPlayerParty**~~ ✅ — wired into layout generator
+3. ~~**Move/Item name lookup tables**~~ ✅
+4. ~~**Bag pocket pointer traversal**~~ ✅
+5. ~~**gPlayerParty**~~ ✅
