@@ -180,6 +180,13 @@ interface BagItem {
   slotIndex: number;
 }
 
+/** Find quantity of a specific item ID in a bag pocket. Returns 0 if not found. */
+function findBagItem(wram: Uint8Array, pocketIndex: number, itemId: number): number {
+  const items = readBagPocket(wram, pocketIndex);
+  const found = items.find((i) => i.itemId === itemId);
+  return found ? found.quantity : 0;
+}
+
 /** Read all items from a bag pocket. Returns non-empty slots only. */
 function readBagPocket(wram: Uint8Array, pocketIndex: number): BagItem[] {
   const startAddr = POCKET_ADDRS[pocketIndex];
@@ -346,37 +353,32 @@ function buildBattleFight(
 
   // Row 2: Poké Balls (wild only — hidden in trainer battles)
   if (!isTrainer) {
-    const ballItems = readBagPocket(wram, 1).slice(0, 4); // BALLS_POCKET
-    const ballButtons = ballItems.map((item) => {
-      const name = itemName(item.itemId);
+    const ballIds = [4, 3, 2]; // Poké Ball, Great Ball, Ultra Ball
+    const ballButtons = ballIds.map((id) => {
+      const qty = findBagItem(wram, 1, id);
+      const name = itemName(id);
       return btn(
-        `${gameId}-macro-item-1-${item.slotIndex}`,
-        `${name} x${item.quantity}`,
+        `${gameId}-macro-item-1-${id}`,
+        qty > 0 ? `${name} x${qty}` : "—",
         ButtonStyle.Secondary,
-        false,
+        qty === 0,
       );
     });
-    // Pad to 4 buttons
-    while (ballButtons.length < 4) {
-      ballButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
-    }
     rows.push(row(...ballButtons));
   }
 
-  // Row 3 (or 2 in trainer): Potions / healing items
-  const itemItems = readBagPocket(wram, 0).slice(0, 4); // ITEMS_POCKET
-  const itemButtons = itemItems.map((item) => {
-    const name = itemName(item.itemId);
+  // Row 3 (or 2 in trainer): Healing items
+  const healIds = [13, 22, 21, 20]; // Potion, Super Potion, Hyper Potion, Max Potion
+  const itemButtons = healIds.map((id) => {
+    const qty = findBagItem(wram, 0, id);
+    const name = itemName(id);
     return btn(
-      `${gameId}-macro-item-0-${item.slotIndex}`,
-      `${name} x${item.quantity}`,
+      `${gameId}-macro-item-0-${id}`,
+      qty > 0 ? `${name} x${qty}` : "—",
       ButtonStyle.Secondary,
-      false,
+      qty === 0,
     );
   });
-  while (itemButtons.length < 4) {
-    itemButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
-  }
   rows.push(row(...itemButtons));
 
   // Row 4 (or 3 in trainer): Switch, Manual, Run
