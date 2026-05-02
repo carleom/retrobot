@@ -282,13 +282,11 @@ export function generateLayout(
   _noneCounter = 0;
   let scene = sceneDetector.detect(wram);
 
-  // Fallback: if battle state looks stale (invalid comm state), check map location.
-  if (scene !== Scene.OVERWORLD) {
+  // Fallback: if on a real map, force overworld regardless of battle flags
   if (scene !== Scene.OVERWORLD) {
     const mapNum = readU8(wram, 0x02025a05);
-      if (mapNum !== 0 && mapNum !== 0xff) {
-        scene = Scene.OVERWORLD;
-      }
+    if (mapNum !== 0 && mapNum !== 0xff) {
+      scene = Scene.OVERWORLD;
     }
   }
 
