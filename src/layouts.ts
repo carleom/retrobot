@@ -203,7 +203,7 @@ function getActivePokemon(wram: Uint8Array): PartyPokemon {
   // Always use player battler 0, not gActiveBattler (may be enemy)
   const idx = readU16(wram, 0x0202406e); // gBattlerPartyIndexes[0]
   // Fall back to slot 0 if index is invalid or battle just started
-  const slot = (idx >= 0 && idx <= 5) ? idx : 0;
+  const slot = idx >= 0 && idx <= 5 ? idx : 0;
   return readPartyPokemon(wram, slot);
 }
 
@@ -397,7 +397,7 @@ function buildBattleFight(
         emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
       return btn(
         `${gameId}-macro-item-1-${id}`,
-        name,
+        ballEmoji ? "" : name,
         ButtonStyle.Secondary,
         qty === 0,
         ballEmoji,
@@ -415,7 +415,7 @@ function buildBattleFight(
       emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
     return btn(
       `${gameId}-macro-item-0-${id}`,
-      name,
+      healEmoji ? "" : name,
       ButtonStyle.Secondary,
       qty === 0,
       healEmoji,
@@ -506,7 +506,10 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
 // ── Pokémon Switch Layout ────────────────────────────────────────────────────
 
-export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
+export function buildPkmnSwitch(
+  wram: Uint8Array,
+  gameId: string,
+): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
 
   // Show up to 6 party Pokemon, 3 per row
