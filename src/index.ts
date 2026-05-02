@@ -650,11 +650,18 @@ const main = async () => {
                       duration: 120,
                     });
                     const targetSlot = parseInt(parts[3]);
-                    const cursorSlot = 0; // Cursor always starts at slot 0 in battle party screen
-                    const steps = targetSlot - cursorSlot;
-                    const dir = steps > 0 ? { input: { DOWN: true }, duration: 4 } : { input: { UP: true }, duration: 4 };
-                    for (let i = 0; i < Math.abs(steps); i++) {
-                      navRes = await emulateParallel(pool, navRes, dir);
+                    // Read gBattlePartyCurrentOrder (3 bytes at 0x0203CF00, nibble-packed)
+                    // to find which display position has the target party slot
+                    const orderBase = 0x0203CF00 - 0x02000000;
+                    let displayPos = 0;
+                    for (let dp = 0; dp < 6; dp++) {
+                      const byteIdx = orderBase + Math.floor(dp / 2);
+                      const nibble = (dp % 2 === 0) ? (navRes.wram[byteIdx] >> 4) : (navRes.wram[byteIdx] & 0x0F);
+                      if (nibble === targetSlot) { displayPos = dp; break; }
+                    }
+                    // Navigate DOWN from cursor (slot 0) to display position
+                    for (let i = 0; i < displayPos; i++) {
+                      navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Select and confirm
@@ -704,8 +711,7 @@ const main = async () => {
                       path.resolve("data", id, "state.sav"),
                       stSw,
                     );
-                    const activeIdx = wrSw[0x0202406e - 0x02000000] | (wrSw[0x0202406f - 0x02000000] << 8);
-                    console.log("After switch: active battler party slot=" + activeIdx);
+
                     const { rows: swRows2 } = generateLayout(wrSw, id, 1);
                     await message.channel.send({
                       content:
