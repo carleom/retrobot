@@ -295,7 +295,7 @@ function buildBattleFight(
     // Pad to 4 buttons
     while (ballButtons.length < 4) {
       ballButtons.push(
-        btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
+        btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
       );
     }
     rows.push(row(...ballButtons));
@@ -314,7 +314,7 @@ function buildBattleFight(
   });
   while (itemButtons.length < 4) {
     itemButtons.push(
-      btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
+      btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
     );
   }
   rows.push(row(...itemButtons));
@@ -391,7 +391,7 @@ function buildBagPocket(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   });
   while (itemButtons.length < 4) {
     itemButtons.push(
-      btn(`noneId(gameId)`, "—", ButtonStyle.Secondary, true),
+      btn(noneId(gameId), "—", ButtonStyle.Secondary, true),
     );
   }
   rows.push(row(...itemButtons));
@@ -417,7 +417,7 @@ function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
       if (pkmn.species === 0) {
         // Empty slot
         buttons.push(
-          btn(`noneId(gameId)`, "— empty —", ButtonStyle.Secondary, true),
+          btn(noneId(gameId), "— empty —", ButtonStyle.Secondary, true),
         );
       } else if (pkmn.currentHp === 0) {
         // Fainted — can't switch to it
