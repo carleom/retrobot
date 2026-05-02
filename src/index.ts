@@ -598,46 +598,24 @@ const main = async () => {
                     wram: new Uint8Array(0),
                     av_info: {},
                   };
-                  let result = await executeMacro(pool, ctx, macro);
+                  const macroResult = await executeMacro(pool, ctx, macro);
 
-                  // Wait for battle turn to play out, then poll until menu reappears
-                  const sceneDetector = new EmeraldSceneDetector();
-                  // Minimum wait: 120 frames (2s) before polling — ensures turn has started
-                  result = await emulateParallel(pool, result, { input: {}, duration: 120 });
-                  for (let poll = 0; poll < 40; poll++) {
-                    const ready = sceneDetector.isBattleMenuReady(result.wram);
-                    if (ready) { console.log("Poll stop: menu ready at poll " + poll); break; }
-                    // Periodically press A to advance text boxes (every 3 polls = ~1.5s)
-                    const input = (poll > 2) ? { A: true } : {};
-                    result = await emulateParallel(pool, result, { input, duration: 30 });
-                  }
-                  if (!sceneDetector.isBattleMenuReady(result.wram)) console.log("Poll timeout after 40 iterations");
-
-                  // If battle ended, wait extra for post-battle animations
-                  if (sceneDetector.detect(result.wram) === Scene.OVERWORLD) {
-                    result = await emulateParallel(pool, result, { input: { A: true }, duration: 120 });
-                  }
-
-                  // Final check: if still in battle after polling, wait for flags to clear
-                  let safety = 0;
-                  while (sceneDetector.detect(result.wram) !== Scene.OVERWORLD && safety < 20) {
-                    // Only press A if still in battle (avoid unwanted inputs in overworld)
-                    const isBattle = sceneDetector.detect(result.wram) === Scene.BATTLE_FIGHT;
-                    result = await emulateParallel(pool, result, { input: isBattle ? { A: true } : {}, duration: 30 });
-                    safety++;
-                  }
-
-                  const { recording, recordingName } =
-                    await encodeMacroRecording(result.frames, info.coreType);
-                  fs.writeFileSync(
-                    path.resolve("data", id, "state.sav"),
-                    result.state,
+                  // Use the existing autoplay system to advance through battle text/animations
+                  const {
+                    recording,
+                    recordingName,
+                    state: finalState,
+                    wram: finalWram,
+                  } = await emulate(
+                    pool,
+                    info.coreType,
+                    new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                    macroResult.state,
+                    { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                    [],
                   );
-                  let { rows: macRows, scene: macScene } = generateLayout(result.wram, id, 1);
-                  // Final safety: if layout is still battle but wait loops finished, force overworld
-                  if (macScene === Scene.BATTLE_FIGHT) {
-                    macRows = buildOverworld(id, 1);
-                  }
+                  fs.writeFileSync(path.resolve("data", id, "state.sav"), finalState);
+                  const { rows: macRows } = generateLayout(finalWram, id, 1);
                   const macMRows = buildMultiplierRows(
                     id,
                     1,
