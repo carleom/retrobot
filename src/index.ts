@@ -639,17 +639,17 @@ const main = async () => {
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Navigate DOWN to target slot
-                    console.log("Switch target slot: " + parts[3]); const targetSlot = parseInt(parts[3]);
                     for (let i = 0; i < targetSlot; i++) {
                       navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Select and confirm
-                    navRes = await executeMacro(pool, navRes, [
-                      { input: { A: true }, duration: 4 },
-                      { input: {}, duration: 4 },
-                      { input: { A: true }, duration: 4 },
-                    ]);
+                    // Select the Pokemon
+                    navRes = await emulateParallel(pool, navRes, { input: { A: true }, duration: 4 });
+                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 30 });
+                    // Confirm the switch ("Will you switch Pokemon?")
+                    navRes = await emulateParallel(pool, navRes, { input: { A: true }, duration: 4 });
+                    navRes = await emulateParallel(pool, navRes, { input: {}, duration: 30 });
                     fs.writeFileSync(path.resolve("data", id, "state.sav"), navRes.state);
                     // Run autoplay for the switch animation
                     const { recording: recSw, recordingName: recNameSw, state: stSw, wram: wrSw } = await emulate(

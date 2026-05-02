@@ -357,7 +357,6 @@ function buildBattleFight(
   multiplier: number,
 ): ActionRowBuilder[] {
   const isTrainer = sceneDetector.isTrainerBattle(wram);
-  const activePkmn = getActivePokemon(wram); console.log("Active mon: species=" + activePkmn.species + " moves=" + JSON.stringify(activePkmn.moves) + " pp=" + JSON.stringify(activePkmn.pp));
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: Moves (max 4, with PP)
@@ -441,7 +440,6 @@ function buildBattleFight(
 // ── Move Select Layout ───────────────────────────────────────────────────────
 
 function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
-  const activePkmn = getActivePokemon(wram); console.log("Active mon: species=" + activePkmn.species + " moves=" + JSON.stringify(activePkmn.moves) + " pp=" + JSON.stringify(activePkmn.pp));
   const rows: ActionRowBuilder[] = [];
 
   // Row 1: 4 move buttons (name only, no PP — the game shows PP on-screen)
@@ -511,7 +509,6 @@ export function buildPkmnSwitch(wram: Uint8Array, gameId: string): ActionRowBuil
     const buttons: ButtonBuilder[] = [];
     for (let col = 0; col < 3; col++) {
       const slotIdx = rowIdx * 3 + col;
-      const pkmn = readPartyPokemon(wram, slotIdx); console.log("Party slot " + slotIdx + ": species=" + pkmn.species);
 
       if (pkmn.species === 0) {
         // Empty slot
