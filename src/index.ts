@@ -51,7 +51,12 @@ import {
   DirectionPress,
 } from "./gameInfo";
 import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
-import { generateLayout, buildOverworld, readBagPocket, itemName } from "./layouts";
+import {
+  generateLayout,
+  buildOverworld,
+  readBagPocket,
+  itemName,
+} from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector } from "./scenes/emerald";
 import { executeMacro, MacroContext, Macro } from "./macros";
@@ -233,7 +238,10 @@ const main = async () => {
       "Configure settings for the most recent game in the channel",
     );
 
-  client.application.commands.set([command]);
+  const uploadEmojisCmd = new SlashCommandBuilder()
+    .setName("upload_emojis")
+    .setDescription("Upload item emojis to this server for button use");
+  client.application.commands.set([command, uploadEmojisCmd]);
 
   await unlockGames(client);
 
@@ -346,6 +354,24 @@ const main = async () => {
 
       try {
         if (interaction.isCommand() && isAdmin) {
+          if (interaction.commandName == "upload_emojis") {
+            await interaction.deferReply({ ephemeral: true });
+            const guild = interaction.guild;
+            if (!guild) return;
+            const emojiDir = path.resolve("emojis");
+            const files = fs.readdirSync(emojiDir).filter((f: string) => f.endsWith(".png"));
+            const ids: Record<string, string> = {};
+            for (const file of files) {
+              const name = file.replace(".png", "");
+              try {
+                const emoji = await guild.emojis.create({ name, attachment: path.join(emojiDir, file) });
+                ids[name] = emoji.id;
+              } catch (e) { console.error("Failed to upload " + name, e); }
+            }
+            fs.writeFileSync("config/emoji_ids.json", JSON.stringify(ids, null, 2));
+            await interaction.editReply({ content: "Uploaded " + files.length + " emojis!" });
+            return;
+          }
           if (interaction.commandName == "settings") {
             const result = await findMostRecentGame(
               client,
@@ -575,12 +601,24 @@ const main = async () => {
                     const itemPocket = parseInt(parts[3]);
                     const itemId = parseInt(parts[4]);
                     // Read WRAM to find the item's slot position in the bag
-                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                    const { wram: itemWram } = await emulateParallel(pool, {
-                      coreType: info.coreType, game: gameBytes, state: stateBytes,
-                      frames: [], gameHash: undefined, stateHash: undefined,
-                    }, { input: {}, duration: 1 });
+                    const stateBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const gameBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
+                    const { wram: itemWram } = await emulateParallel(
+                      pool,
+                      {
+                        coreType: info.coreType,
+                        game: gameBytes,
+                        state: stateBytes,
+                        frames: [],
+                        gameHash: undefined,
+                        stateHash: undefined,
+                      },
+                      { input: {}, duration: 1 },
+                    );
                     const items = readBagPocket(itemWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
                     const slotIndex = found ? found.slotIndex : 0;
@@ -622,12 +660,21 @@ const main = async () => {
                   } = await emulate(
                     pool,
                     info.coreType,
-                    new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                    new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    ),
                     macroResult.state,
-                    { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                    {
+                      ...info,
+                      inputAssist: InputAssist.Autoplay,
+                      inputAssistSpeed: InputAssistSpeed.Normal,
+                    },
                     [],
                   );
-                  fs.writeFileSync(path.resolve("data", id, "state.sav"), finalState);
+                  fs.writeFileSync(
+                    path.resolve("data", id, "state.sav"),
+                    finalState,
+                  );
                   const { rows: macRows } = generateLayout(finalWram, id, 1);
                   const macMRows = buildMultiplierRows(
                     id,

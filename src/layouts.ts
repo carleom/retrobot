@@ -29,6 +29,11 @@ const lookupsPath = path.join(
 );
 const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 
+// Load custom emoji IDs (set by /upload_emojis command)
+const emojiIdsPath = path.join(__dirname, "..", "config", "emoji_ids.json");
+let emojiIds: Record<string, string> = {};
+try { emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8")); } catch (_) {}
+
 const moveEmojis: Record<string, string> = {};
 for (const entry of Object.entries((lookups as any).moveEmojis || {})) {
   moveEmojis[entry[0]] = entry[1] as string;
@@ -367,11 +372,13 @@ function buildBattleFight(
     const ballButtons = ballIds.map((id) => {
       const qty = findBagItem(wram, 1, id);
       const name = itemName(id);
+      const ballEmoji = emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
       return btn(
         `${gameId}-macro-item-1-${id}`,
         name,
         ButtonStyle.Secondary,
         qty === 0,
+        ballEmoji,
       );
     });
     rows.push(row(...ballButtons));
@@ -382,11 +389,13 @@ function buildBattleFight(
   const itemButtons = healIds.map((id) => {
     const qty = findBagItem(wram, 0, id);
     const name = itemName(id);
+    const healEmoji = emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
     return btn(
       `${gameId}-macro-item-0-${id}`,
       name,
       ButtonStyle.Secondary,
       qty === 0,
+      healEmoji,
     );
   });
   rows.push(row(...itemButtons));

@@ -16,3 +16,5 @@ docker-compose.yml
 decompiled/
 roms/
 docs/notes.md
+emojis/
+config/emoji_ids.json
