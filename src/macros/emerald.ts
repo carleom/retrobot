@@ -2,7 +2,8 @@
  * Emerald-Specific Macros
  *
  * Pre-built macro sequences for common battle actions in Pokémon Emerald (USA).
- * All macros assume the cursor starts at FIGHT in the BATTLE_FIGHT scene.
+ * Every macro that starts from the battle menu first calls resetToFight()
+ * to guarantee the cursor is at FIGHT regardless of previous state.
  *
  * Battle menu layout (2x2 grid):
  *   FIGHT    BAG
@@ -27,44 +28,49 @@ const UP: MacroStep = { input: { UP: true }, duration: 4 };
 const RIGHT: MacroStep = { input: { RIGHT: true }, duration: 4 };
 const LEFT: MacroStep = { input: { LEFT: true }, duration: 4 };
 
-/** Idle for N frames. */
 function idle(frames: number): MacroStep {
   return { input: {}, duration: frames };
 }
 
-/** Idle with an intermediate button update (no GIF). */
-function idleUpdate(frames: number): MacroStep {
-  return { input: {}, duration: frames, updateButtons: true };
+/**
+ * Reset cursor to FIGHT on the 2x2 battle menu.
+ * Presses UP×2 + LEFT×2 to guarantee FIGHT from any cursor position.
+ * Only takes ~24 frames total. Safe to call even if already at FIGHT.
+ */
+function resetToFight(): MacroStep[] {
+  return [
+    { ...UP },
+    { ...idle(4) },
+    { ...UP },
+    { ...idle(4) },
+    { ...LEFT },
+    { ...idle(4) },
+    { ...LEFT },
+    { ...idle(4) },
+  ];
 }
 
 // ── Select Move Macro ────────────────────────────────────────────────────────
 
-/**
- * Select a move by its slot index (0-3) on the move selection screen.
- *
- * Move grid layout:
- *   [0] [1]
- *   [2] [3]
- *
- * Assumes cursor starts at FIGHT in the battle menu.
- */
 export function selectMoveMacro(slotIndex: number): Macro {
   if (slotIndex < 0 || slotIndex > 3) {
     throw new Error(`Invalid move slot index: ${slotIndex}. Must be 0-3.`);
   }
 
   const steps: MacroStep[] = [
-    // Select FIGHT (cursor defaults there)
-    { ...A },
-    { ...idle(40) }, // Wait for move menu to open
-    // Reset cursor to top-left (slot 0) regardless of starting position
-    { ...LEFT }, { ...idle(4) },
-    { ...LEFT }, { ...idle(4) },
-    { ...UP },   { ...idle(4) },
-    { ...UP },   { ...idle(4) },
+    ...resetToFight(),
+    { ...A }, // Select FIGHT
+    { ...idle(40) }, // Wait for move menu
+    { ...LEFT },
+    { ...idle(4) },
+    { ...LEFT },
+    { ...idle(4) },
+    { ...UP },
+    { ...idle(4) },
+    { ...UP },
+    { ...idle(4) },
   ];
 
-  // Navigate from slot 0 to the desired move slot
   if (slotIndex === 1 || slotIndex === 3) {
     steps.push({ ...RIGHT }, { ...idle(4) });
   }
@@ -72,122 +78,108 @@ export function selectMoveMacro(slotIndex: number): Macro {
     steps.push({ ...DOWN }, { ...idle(4) });
   }
 
-  steps.push(
-    { ...A, updateButtons: true }, // Select the move
-    { ...idle(30) },              // Initial wait (polling handles the rest)
-  );
-
+  steps.push({ ...A, updateButtons: true }, { ...idle(30) });
   return steps;
 }
 
 // ── Use Item Macro ───────────────────────────────────────────────────────────
 
-/**
- * Use an item from the bag during battle.
- *
- * Assumes cursor starts at FIGHT. Navigates RIGHT to BAG, opens it,
- * scrolls to the desired item slot, and confirms use.
- *
- * @param slotIndex - Which item slot to use (0 = first item in pocket).
- *                    Only items in the currently open pocket (default: ITEMS).
- */
 export function useItemMacro(slotIndex: number = 0): Macro {
   if (slotIndex < 0) {
     throw new Error(`Invalid item slot index: ${slotIndex}. Must be >= 0.`);
   }
 
   const steps: MacroStep[] = [
-    // Navigate to BAG: RIGHT from FIGHT
+    ...resetToFight(),
     { ...RIGHT },
     { ...idle(6) },
-    { ...A },          // Select BAG
-    { ...idle(20) },   // Wait for bag to open
+    { ...A },
+    { ...idle(20) },
   ];
 
-  // Navigate down to the desired item slot
   for (let i = 0; i < slotIndex; i++) {
     steps.push({ ...DOWN }, { ...idle(4) });
   }
 
   steps.push(
-    { ...A, updateButtons: true }, // Select item (update buttons to show bag contents)
+    { ...A, updateButtons: true },
     { ...idle(4) },
-    { ...A },          // Confirm use on active Pokemon
-    { ...idle(20) },   // Wait for use animation
-    { ...idle(60) },   // HP bar animation / text
+    { ...A },
+    { ...idle(20) },
+    { ...idle(60) },
   );
-
   return steps;
 }
 
-// ── Switch Pokémon Macro ─────────────────────────────────────────────────────
+// ── Switch Pokémon Macro (from FIGHT menu) ───────────────────────────────────
 
-/**
- * Switch the active Pokemon to a different party member.
- *
- * Navigates from FIGHT → DOWN → PKMN, opens the party screen,
- * scrolls to the desired party slot, and confirms the switch.
- *
- * @param partySlot - Which party slot to switch to (0-5).
- *                    Slot 0 is the lead (currently active) Pokemon.
- *                    Switching to the active Pokemon is a no-op at the game level.
- */
 export function switchPokemonMacro(partySlot: number): Macro {
   if (partySlot < 0 || partySlot > 5) {
     throw new Error(`Invalid party slot: ${partySlot}. Must be 0-5.`);
   }
 
   const steps: MacroStep[] = [
-    // Navigate to PKMN: DOWN from FIGHT
+    ...resetToFight(),
     { ...DOWN },
     { ...idle(6) },
-    { ...A },          // Select PKMN
-    { ...idle(20) },   // Wait for party screen to open
+    { ...A },
+    { ...idle(20) },
   ];
 
-  // Navigate to the desired party slot (scroll down from position 0)
   for (let i = 0; i < partySlot; i++) {
     steps.push({ ...DOWN }, { ...idle(4) });
   }
 
   steps.push(
-    { ...A, updateButtons: true }, // Select party member (update buttons)
+    { ...A, updateButtons: true },
     { ...idle(4) },
-    { ...A },          // Confirm switch (the game prompts "Will you switch?")
-    { ...idle(30) },  // Wait for switch animation + return to battle
+    { ...A },
+    { ...idle(30) },
   );
+  return steps;
+}
 
+// ── Switch Pokémon Macro (from party screen, already open) ───────────────────
+
+export function switchFromPartyMacro(partySlot: number): Macro {
+  if (partySlot < 0 || partySlot > 5) {
+    throw new Error(`Invalid party slot: ${partySlot}. Must be 0-5.`);
+  }
+
+  const steps: MacroStep[] = [];
+
+  for (let i = 0; i < partySlot; i++) {
+    steps.push({ ...DOWN }, { ...idle(4) });
+  }
+
+  steps.push(
+    { ...A, updateButtons: true },
+    { ...idle(4) },
+    { ...A },
+    { ...idle(30) },
+  );
   return steps;
 }
 
 // ── Run Macro ────────────────────────────────────────────────────────────────
 
-/**
- * Attempt to flee from a wild battle.
- *
- * Navigates from FIGHT → DOWN (to PKMN) → RIGHT (to RUN) → A.
- * Only works in wild battles; in trainer battles the game blocks fleeing.
- */
 export function runMacro(): Macro {
   return [
-    // Navigate to RUN: DOWN (to PKMN), then RIGHT (to RUN)
+    ...resetToFight(),
     { ...DOWN },
     { ...idle(6) },
     { ...RIGHT },
     { ...idle(6) },
-    { ...A },          // Select RUN
-    { ...idle(30) },  // Wait for flee animation + text
+    { ...A },
+    { ...idle(30) },
   ];
 }
 
-// ── Utility: Open Bag (navigate to BAG pocket) ───────────────────────────────
+// ── Utilities ────────────────────────────────────────────────────────────────
 
-/**
- * Open the bag from the battle menu (navigates to BAG and opens it).
- * Useful as a prefix for custom bag navigation not covered by useItemMacro.
- */
 export function openBagMacro(): Macro {
   return [
+    ...resetToFight(),
     { ...RIGHT },
     { ...idle(6) },
     { ...A },
@@ -195,12 +187,6 @@ export function openBagMacro(): Macro {
   ];
 }
 
-// ── Utility: Back out of current menu with B ─────────────────────────────────
-
-/** Press B to go back one menu level. */
 export function backMacro(): Macro {
-  return [
-    { ...B },
-    { ...idle(12) },
-  ];
+  return [{ ...B }, { ...idle(12) }];
 }
