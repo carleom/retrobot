@@ -259,14 +259,15 @@ export function generateLayout(
   _noneCounter = 0;
   let scene = sceneDetector.detect(wram);
 
-  // Fallback: if battle flags are stale, check actual map location.
-  // SaveBlock1 at 0x02025A00: location.mapGroup at +0x04, location.mapNum at +0x05.
-  // Valid overworld maps have non-zero mapGroup/mapNum. Battle maps are 0/0 or similar.
+  // Fallback: if battle state looks stale (invalid comm state), check map location.
   if (scene !== Scene.OVERWORLD) {
-    const mapNum = readU8(wram, 0x02025a05);
-    // If player is on a real map (not battle screen), force overworld
-    if (mapNum !== 0 && mapNum !== 0xff) {
-      scene = Scene.OVERWORLD;
+    const commState = readU8(wram, 0x02024332 + readU8(wram, 0x02024064));
+    // Valid battle states are 0-4. If state is out of range, flags may be stale.
+    if (commState > 4) {
+      const mapNum = readU8(wram, 0x02025a05);
+      if (mapNum !== 0 && mapNum !== 0xff) {
+        scene = Scene.OVERWORLD;
+      }
     }
   }
 
