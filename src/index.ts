@@ -600,8 +600,10 @@ const main = async () => {
                   };
                   let result = await executeMacro(pool, ctx, macro);
 
-                  // Poll idle frames until battle menu reappears (or overworld)
+                  // Wait for battle turn to play out, then poll until menu reappears
                   const sceneDetector = new EmeraldSceneDetector();
+                  // Minimum wait: 120 frames (2s) before polling — ensures turn has started
+                  result = await emulateParallel(pool, result, { input: {}, duration: 120 });
                   for (let poll = 0; poll < 40; poll++) {
                     const ready = sceneDetector.isBattleMenuReady(result.wram);
                     if (ready) { console.log("Poll stop: menu ready at poll " + poll); break; }
