@@ -639,7 +639,7 @@ const main = async () => {
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
                     }
                     // Navigate DOWN to target slot
-                    const targetSlot = parseInt(parts[3]);
+                    console.log("Switch target slot: " + parts[3]); const targetSlot = parseInt(parts[3]);
                     for (let i = 0; i < targetSlot; i++) {
                       navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
                       navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
