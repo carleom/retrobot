@@ -686,7 +686,7 @@ const main = async () => {
                     content:
                       player.nickname || player.displayName + ": " + macroLabel,
                     files: [{ attachment: recording, name: recordingName }],
-                    components: [...macRows],
+                    components: macRows as any,
                   });
                   return;
                 }
@@ -739,7 +739,7 @@ const main = async () => {
                       (parseInt(multiplier) > 1 ? " x" + multiplier : "") +
                       "...",
                   files: [{ attachment: recRaw, name: recNameRaw }],
-                  components: [...rawRows],
+                  components: rawRows as any,
                 });
               } catch (err) {
                 console.error(err);
