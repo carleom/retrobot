@@ -650,7 +650,7 @@ const main = async () => {
                       duration: 120,
                     });
                     const targetSlot = parseInt(parts[3]);
-                    const cursorSlot = navRes.wram[0x0203CED1 - 0x02000000];
+                    const cursorSlot = navRes.wram[0x0202406e - 0x02000000]; // gBattlerPartyIndexes[0]
                     const steps = targetSlot - cursorSlot;
                     const dir = steps > 0 ? { input: { DOWN: true }, duration: 4 } : { input: { UP: true }, duration: 4 };
                     for (let i = 0; i < Math.abs(steps); i++) {
