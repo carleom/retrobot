@@ -52,6 +52,8 @@ import {
 } from "./gameInfo";
 import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
 import { generateLayout } from "./layouts";
+import { Scene } from "./scenes";
+import { EmeraldSceneDetector } from "./scenes/emerald";
 import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
@@ -506,7 +508,13 @@ const main = async () => {
                   if (rest === "macro-manual") {
                     await message.edit({
                       components: [
-                        ...buttons(info.coreType, id, 1, true, info.multipliers),
+                        ...buttons(
+                          info.coreType,
+                          id,
+                          1,
+                          true,
+                          info.multipliers,
+                        ),
                       ],
                     });
                     await interaction.update({});
@@ -590,7 +598,16 @@ const main = async () => {
                     wram: new Uint8Array(0),
                     av_info: {},
                   };
-                  const result = await executeMacro(pool, ctx, macro);
+                  let result = await executeMacro(pool, ctx, macro);
+
+                  // Poll idle frames until battle menu reappears (or overworld)
+                  const sceneDetector = new EmeraldSceneDetector();
+                  for (let poll = 0; poll < 20; poll++) {
+                    const scene = sceneDetector.detect(result.wram);
+                    if (scene === Scene.BATTLE_FIGHT || scene === Scene.OVERWORLD) break;
+                    result = await emulateParallel(pool, result, { input: {}, duration: 30 });
+                  }
+
                   const { recording, recordingName } =
                     await encodeMacroRecording(result.frames, info.coreType);
                   fs.writeFileSync(

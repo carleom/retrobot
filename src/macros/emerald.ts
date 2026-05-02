@@ -72,7 +72,7 @@ export function selectMoveMacro(slotIndex: number): Macro {
 
   steps.push(
     { ...A, updateButtons: true }, // Select the move (update buttons to move select view)
-    { ...idle(180) },              // Wait for full attack animation
+    { ...idle(30) },              // Wait for full attack animation
   );
 
   return steps;
@@ -152,7 +152,7 @@ export function switchPokemonMacro(partySlot: number): Macro {
     { ...A, updateButtons: true }, // Select party member (update buttons)
     { ...idle(4) },
     { ...A },          // Confirm switch (the game prompts "Will you switch?")
-    { ...idle(120) },  // Wait for switch animation + return to battle
+    { ...idle(30) },  // Wait for switch animation + return to battle
   );
 
   return steps;
@@ -174,7 +174,7 @@ export function runMacro(): Macro {
     { ...RIGHT },
     { ...idle(6) },
     { ...A },          // Select RUN
-    { ...idle(120) },  // Wait for flee animation + text
+    { ...idle(30) },  // Wait for flee animation + text
   ];
 }
 
