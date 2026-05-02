@@ -51,7 +51,7 @@ import {
   DirectionPress,
 } from "./gameInfo";
 import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
-import { generateLayout, buildOverworld } from "./layouts";
+import { generateLayout, buildOverworld, readBagPocket, itemName } from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector } from "./scenes/emerald";
 import { executeMacro, MacroContext, Macro } from "./macros";
@@ -571,8 +571,21 @@ const main = async () => {
                     macro = selectMoveMacro(parseInt(parts[3]));
                     macroLabel = "Move " + (parseInt(parts[3]) + 1);
                   } else if (parts[2] === "item") {
-                    macro = useItemMacro(parseInt(parts[3]));
-                    macroLabel = "Item";
+                    // Format: macro-item-POCKET-ITEMID (e.g., macro-item-0-13)
+                    const itemPocket = parseInt(parts[3]);
+                    const itemId = parseInt(parts[4]);
+                    // Read WRAM to find the item's slot position in the bag
+                    const stateBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
+                    const gameBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
+                    const { wram: itemWram } = await emulateParallel(pool, {
+                      coreType: info.coreType, game: gameBytes, state: stateBytes,
+                      frames: [], gameHash: undefined, stateHash: undefined,
+                    }, { input: {}, duration: 1 });
+                    const items = readBagPocket(itemWram, itemPocket);
+                    const found = items.find((it: any) => it.itemId === itemId);
+                    const slotIndex = found ? found.slotIndex : 0;
+                    macro = useItemMacro(slotIndex);
+                    macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
                     macro = switchPokemonMacro(parseInt(parts[3]));
                     macroLabel = "Switch to slot " + parts[3];
