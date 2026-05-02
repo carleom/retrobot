@@ -675,18 +675,15 @@ const main = async () => {
                     path.resolve("data", id, "state.sav"),
                     finalState,
                   );
-                  const { rows: macRows } = generateLayout(finalWram, id, 1);
-                  const macMRows = buildMultiplierRows(
-                    id,
-                    1,
-                    info.multipliers,
-                    true,
-                  );
+                  const { rows: macRows, scene: macScene } = generateLayout(finalWram, id, 1);
+                  const macComponents = macScene === Scene.OVERWORLD
+                    ? [...macRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
+                    : macRows;
                   await message.channel.send({
                     content:
                       player.nickname || player.displayName + ": " + macroLabel,
                     files: [{ attachment: recording, name: recordingName }],
-                    components: macRows as any,
+                    components: macComponents as any,
                   });
                   return;
                 }
@@ -723,13 +720,10 @@ const main = async () => {
                   path.resolve("data", id, "state.sav"),
                   newState,
                 );
-                const { rows: rawRows } = generateLayout(rawWram, id, 1);
-                const rawMRows = buildMultiplierRows(
-                  id,
-                  1,
-                  info.multipliers,
-                  true,
-                );
+                const { rows: rawRows, scene: rawScene } = generateLayout(rawWram, id, 1);
+                const rawComponents = rawScene === Scene.OVERWORLD
+                  ? [...rawRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
+                  : rawRows;
                 await message.channel.send({
                   content:
                     player.nickname ||
@@ -739,7 +733,7 @@ const main = async () => {
                       (parseInt(multiplier) > 1 ? " x" + multiplier : "") +
                       "...",
                   files: [{ attachment: recRaw, name: recNameRaw }],
-                  components: rawRows as any,
+                  components: rawComponents as any,
                 });
               } catch (err) {
                 console.error(err);
