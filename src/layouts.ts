@@ -94,10 +94,30 @@ interface PartyPokemon {
  * Source: Bulbapedia Gen III Pokemon data substructures.
  */
 const SUBSTRUCT_ORDER = [
-  "GAEM", "GAME", "GEAM", "GEMA", "GMAE", "GMEA",
-  "AGEM", "AGME", "AEGM", "AEMG", "AMGE", "AMEG",
-  "EGAM", "EGMA", "EAGM", "EAMG", "EMGA", "EMAG",
-  "MGAE", "MGEA", "MAGE", "MAEG", "MEGA", "MEAG",
+  "GAEM",
+  "GAME",
+  "GEAM",
+  "GEMA",
+  "GMAE",
+  "GMEA",
+  "AGEM",
+  "AGME",
+  "AEGM",
+  "AEMG",
+  "AMGE",
+  "AMEG",
+  "EGAM",
+  "EGMA",
+  "EAGM",
+  "EAMG",
+  "EMGA",
+  "EMAG",
+  "MGAE",
+  "MGEA",
+  "MAGE",
+  "MAEG",
+  "MEGA",
+  "MEAG",
 ];
 
 /** Read party Pokemon at a given slot index (0-5). */
@@ -105,8 +125,8 @@ function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
 
   // Read unencrypted metadata for the XOR key
-  const personality = (readU32(wram, base + 0x00) >>> 0);
-  const otId = (readU32(wram, base + 0x04) >>> 0);
+  const personality = readU32(wram, base + 0x00) >>> 0;
+  const otId = readU32(wram, base + 0x04) >>> 0;
   const key = (personality ^ otId) >>> 0;
 
   // Decrypt all 12 u32s in the secure region (0x20-0x4F)
@@ -121,17 +141,17 @@ function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
   const aIdx = order.indexOf("A") * 3; // Attacks = moves substruct (3 u32s per slot)
 
   // Growth substruct: u32[0]=species|heldItem, u32[1]=experience, u32[2]=ppBonuses|friendship
-  const species = d[gIdx] & 0xFFFF;
+  const species = d[gIdx] & 0xffff;
 
   // Attacks substruct: u32[0]=move0|move1, u32[1]=move2|move3, u32[2]=pp0|pp1|pp2|pp3
-  const move0 = d[aIdx] & 0xFFFF;
-  const move1 = (d[aIdx] >> 16) & 0xFFFF;
-  const move2 = d[aIdx + 1] & 0xFFFF;
-  const move3 = (d[aIdx + 1] >> 16) & 0xFFFF;
-  const pp0 = d[aIdx + 2] & 0xFF;
-  const pp1 = (d[aIdx + 2] >> 8) & 0xFF;
-  const pp2 = (d[aIdx + 2] >> 16) & 0xFF;
-  const pp3 = (d[aIdx + 2] >> 24) & 0xFF;
+  const move0 = d[aIdx] & 0xffff;
+  const move1 = (d[aIdx] >> 16) & 0xffff;
+  const move2 = d[aIdx + 1] & 0xffff;
+  const move3 = (d[aIdx + 1] >> 16) & 0xffff;
+  const pp0 = d[aIdx + 2] & 0xff;
+  const pp1 = (d[aIdx + 2] >> 8) & 0xff;
+  const pp2 = (d[aIdx + 2] >> 16) & 0xff;
+  const pp3 = (d[aIdx + 2] >> 24) & 0xff;
 
   return {
     species,
@@ -243,10 +263,15 @@ export function generateLayout(
   // SaveBlock1 at 0x02025A00: location.mapGroup at +0x04, location.mapNum at +0x05.
   // Valid overworld maps have non-zero mapGroup/mapNum. Battle maps are 0/0 or similar.
   if (scene !== Scene.OVERWORLD) {
-    const mapGroup = readU8(wram, 0x02025A04);
-    const mapNum = readU8(wram, 0x02025A05);
+    const mapGroup = readU8(wram, 0x02025a04);
+    const mapNum = readU8(wram, 0x02025a05);
     // If player is on a real map (not battle screen), force overworld
-    if (mapGroup !== 0 && mapNum !== 0 && mapGroup !== 0xFF && mapNum !== 0xFF) {
+    if (
+      mapGroup !== 0 &&
+      mapNum !== 0 &&
+      mapGroup !== 0xff &&
+      mapNum !== 0xff
+    ) {
       scene = Scene.OVERWORLD;
     }
   }
@@ -277,15 +302,15 @@ function buildOverworld(
   const m = multiplier;
   return [
     row(
-      btn(`${gameId}-up-${m}`, "Up", ButtonStyle.Secondary, false, "⬆️"),
-      btn(`${gameId}-down-${m}`, "Down", ButtonStyle.Secondary, false, "⬇️"),
-      btn(`${gameId}-left-${m}`, "Left", ButtonStyle.Secondary, false, "⬅️"),
-      btn(`${gameId}-right-${m}`, "Right", ButtonStyle.Secondary, false, "➡️"),
+      btn(`${gameId}-up-${m}`, "", ButtonStyle.Secondary, false, "⬆️"),
+      btn(`${gameId}-down-${m}`, "", ButtonStyle.Secondary, false, "⬇️"),
+      btn(`${gameId}-left-${m}`, "", ButtonStyle.Secondary, false, "⬅️"),
+      btn(`${gameId}-right-${m}`, "", ButtonStyle.Secondary, false, "➡️"),
     ),
     row(
-      btn(`${gameId}-a-${m}`, "A", ButtonStyle.Success, false, "🅰️"),
-      btn(`${gameId}-b-${m}`, "B", ButtonStyle.Danger, false, "🅱️"),
-      btn(`${gameId}-start-${m}`, "Start", ButtonStyle.Secondary, false, "▶️"),
+      btn(`${gameId}-a-${m}`, "", ButtonStyle.Success, false, "🅰️"),
+      btn(`${gameId}-b-${m}`, "", ButtonStyle.Danger, false, "🅱️"),
+      btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
     ),
   ];
 }
