@@ -66,10 +66,7 @@ export class EmeraldSceneDetector implements SceneDetector {
 
     // In battle — read the action selection state machine
     const activeBattler = readU8(wram, ADDR.gActiveBattler);
-    const commState = readU8(
-      wram,
-      ADDR.gBattleCommunication + activeBattler,
-    );
+    const commState = readU8(wram, ADDR.gBattleCommunication + activeBattler);
     const chosenAction = readU8(
       wram,
       ADDR.gChosenActionByBattler + activeBattler,
@@ -125,6 +122,17 @@ export class EmeraldSceneDetector implements SceneDetector {
       default:
         return Scene.UNKNOWN;
     }
+  }
+
+  /**
+   * Check whether the battle menu is actually showing (not animating).
+   * Returns true only at the FIGHT/BAG/PKMN/RUN menu or overworld.
+   */
+  isBattleMenuReady(wram: Uint8Array): boolean {
+    const battleTypeFlags = readU32(wram, ADDR.gBattleTypeFlags);
+    if (battleTypeFlags === 0) return true;
+    const ab = readU8(wram, ADDR.gActiveBattler);
+    return readU8(wram, ADDR.gBattleCommunication + ab) === BattleCommState.STATE_BEFORE_ACTION_CHOSEN;
   }
 
   /**

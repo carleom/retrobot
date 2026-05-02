@@ -603,8 +603,7 @@ const main = async () => {
                   // Poll idle frames until battle menu reappears (or overworld)
                   const sceneDetector = new EmeraldSceneDetector();
                   for (let poll = 0; poll < 20; poll++) {
-                    const scene = sceneDetector.detect(result.wram);
-                    if (scene === Scene.BATTLE_FIGHT || scene === Scene.OVERWORLD) break;
+                    if (sceneDetector.isBattleMenuReady(result.wram)) break;
                     result = await emulateParallel(pool, result, { input: {}, duration: 30 });
                   }
 
