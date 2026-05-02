@@ -365,7 +365,28 @@ Files: `src/macros.ts` (engine core), `src/macros/emerald.ts` (6 macros: selectM
 
 Macros use fire-and-forget model: no mid-macro scene detection, `updateButtons` flag for intermediate Discord updates (M5), one GIF at the end.
 
-## 15. Open Items
+## 16. Milestone 5: Wire Into Discord Bot ✅ (Completed 2025-05-01)
+
+Modified `src/index.ts` — integrated scene detector, layout generator, and macro engine.
+
+### Button Routing
+- `macro-none` → no-op placeholder
+- `macro-manual` → regenerate context-aware layout from current state
+- `macro-move-N` → execute `selectMoveMacro(N)`, encode GIF, post with layout
+- `macro-item-P-N` → execute `useItemMacro(N)`
+- `macro-switch` → navigate to switch screen, show party layout
+- `macro-switch-N` → execute `switchPokemonMacro(N)`
+- `macro-run` → execute `runMacro()`
+- Raw inputs (up/down/a/b/etc) → existing emulate() + generateLayout() for buttons
+- Multiplier changes → generateLayout() for buttons
+
+### Changes
+- New `encodeMacroRecording()` helper for GIF encoding from macro frames
+- New `buildMultiplierRows()` helper for appending multiplier buttons to layouts
+- After every interaction: scene re-detection → context-aware button rows
+- State saved to disk after both raw and macro emulation
+
+## 17. Open Items
 
 1. ~~**Exact EWRAM addresses**~~ ✅
 2. **IWRAM access** — for `gTextFlags` / `gBattleMainFunc` access
