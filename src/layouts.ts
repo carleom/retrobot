@@ -32,7 +32,9 @@ const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 // Load custom emoji IDs (set by /upload_emojis command)
 const emojiIdsPath = path.join(__dirname, "..", "config", "emoji_ids.json");
 let emojiIds: Record<string, string> = {};
-try { emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8")); } catch (_) {}
+try {
+  emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8"));
+} catch (_) {}
 
 const moveEmojis: Record<string, string> = {};
 for (const entry of Object.entries((lookups as any).moveEmojis || {})) {
@@ -282,10 +284,8 @@ export function generateLayout(
 
   // Fallback: if battle state looks stale (invalid comm state), check map location.
   if (scene !== Scene.OVERWORLD) {
-    const commState = readU8(wram, 0x02024332);
-    // Valid battle states are 0-4. If state is out of range, flags may be stale.
-    if (commState > 4) {
-      const mapNum = readU8(wram, 0x02025a05);
+  if (scene !== Scene.OVERWORLD) {
+    const mapNum = readU8(wram, 0x02025a05);
       if (mapNum !== 0 && mapNum !== 0xff) {
         scene = Scene.OVERWORLD;
       }
@@ -372,7 +372,8 @@ function buildBattleFight(
     const ballButtons = ballIds.map((id) => {
       const qty = findBagItem(wram, 1, id);
       const name = itemName(id);
-      const ballEmoji = emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
+      const ballEmoji =
+        emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
       return btn(
         `${gameId}-macro-item-1-${id}`,
         name,
@@ -389,7 +390,8 @@ function buildBattleFight(
   const itemButtons = healIds.map((id) => {
     const qty = findBagItem(wram, 0, id);
     const name = itemName(id);
-    const healEmoji = emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
+    const healEmoji =
+      emojiIds[name.toLowerCase().replace(/[^a-z]/g, "")] || undefined;
     return btn(
       `${gameId}-macro-item-0-${id}`,
       name,
