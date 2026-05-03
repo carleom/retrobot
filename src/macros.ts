@@ -1,6 +1,10 @@
 /**
  * Macro Engine — executes sequences of timed button inputs through the emulator.
  *
+ * ⚠️  WARNING: Blind frame-count timing is unreliable for menu navigation.
+ *     Always pair macros with scene-polling in the caller (see index.ts item handler).
+ *     Macros that depend on idle(N) waits for menu transitions will break.
+ *
  * A macro is an array of {input, duration} steps. The engine runs each step
  * sequentially through the worker pool, accumulating frames. Intermediate steps
  * with `updateButtons` can trigger in-place Discord message updates (handled

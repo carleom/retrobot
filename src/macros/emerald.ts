@@ -1,6 +1,16 @@
 /**
  * Emerald-Specific Macros
  *
+ * ⚠️  CRITICAL: NEVER use blind frame-count timing (idle(N)) to wait for menus.
+ *     It does not work reliably. Always use step-by-step polling via
+ *     emulateParallel + scene detection instead.
+ *
+ *     Correct pattern (see item handler in index.ts):
+ *       1. Press the button
+ *       2. Run emulateParallel with {input:{}, duration:2} in a loop
+ *       3. Call detector.detect(wram) each iteration
+ *       4. Break when the expected scene is detected
+ *
  * Pre-built macro sequences for common battle actions in Pokémon Emerald (USA).
  * Every macro that starts from the battle menu first calls resetToFight()
  * to guarantee the cursor is at FIGHT regardless of previous state.
