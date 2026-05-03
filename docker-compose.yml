@@ -3,6 +3,7 @@ services:
     build: .
     volumes:
       - ./data:/retrobot/data
+      - ./config/emoji_ids.json:/retrobot/config/emoji_ids.json
     env_file:
       - .env
     restart: unless-stopped
