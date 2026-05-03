@@ -164,7 +164,7 @@ const SUBSTRUCT_ORDER = [
 ];
 
 /** Read party Pokemon at a given slot index (0-5). */
-function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
+export function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
 
   // Read unencrypted metadata for the XOR key
@@ -359,10 +359,8 @@ export function buildOverworld(
       btn(`${gameId}-a-${m}`, "", ButtonStyle.Success, false, "🅰️"),
       btn(`${gameId}-b-${m}`, "", ButtonStyle.Danger, false, "🅱️"),
       btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
-    row(
-      btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary),
     ),
-    ),
+    row(btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary)),
   ];
 }
 
@@ -535,7 +533,7 @@ export function buildPkmnSwitch(
         buttons.push(
           btn(noneId(gameId), "— empty —", ButtonStyle.Secondary, true),
         );
-      } else if (pkmn.currentHp === 0) {
+      } else if (pkmn.currentHp === 0) {      } else if (pkmn.currentHp === 0) {
         // Fainted — can't switch to it
         const name = speciesName(pkmn.species);
         buttons.push(
@@ -571,5 +569,5 @@ export function buildPkmnSwitch(
 
 // ── Re-export for convenience ────────────────────────────────────────────────
 
-export { moveName, itemName, speciesName, readPartyPokemon, readBagPocket };
+export { moveName, itemName, speciesName, readBagPocket };
 export type { PartyPokemon, BagItem };

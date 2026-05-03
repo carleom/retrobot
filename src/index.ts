@@ -57,6 +57,7 @@ import {
   buildOverworld,
   readBagPocket,
   itemName,
+  readPartyPokemon,
 } from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector } from "./scenes/emerald";
@@ -65,7 +66,8 @@ import {
   selectMoveMacro,
   useItemMacro,
   navigateToPartyMacro,
-  switchFromPartyMacro, overworldSwitchMacro,
+  switchFromPartyMacro,
+  overworldSwitchMacro,
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
@@ -625,34 +627,197 @@ const main = async () => {
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
                     // Check if we are in battle or overworld
-                    const ctxBytes = new Uint8Array(fs.readFileSync(path.resolve("data", id, "state.sav")));
-                    const ctxGame = new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game)));
-                    const { wram: ctxWram } = await emulateParallel(pool, {
-                      coreType: info.coreType, game: ctxGame, state: ctxBytes,
-                      frames: [], gameHash: undefined, stateHash: undefined,
-                    }, { input: {}, duration: 1 });
-                    const inBattle = ((ctxWram[0x02022fec - 0x02000000] | (ctxWram[0x02022fed - 0x02000000] << 8) | (ctxWram[0x02022fee - 0x02000000] << 16) | (ctxWram[0x02022fef - 0x02000000] << 24)) >>> 0) !== 0;
-                    
+                    const ctxBytes = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, "state.sav")),
+                    );
+                    const ctxGame = new Uint8Array(
+                      fs.readFileSync(path.resolve("data", id, info.game)),
+                    );
+                    const { wram: ctxWram } = await emulateParallel(
+                      pool,
+                      {
+                        coreType: info.coreType,
+                        game: ctxGame,
+                        state: ctxBytes,
+                        frames: [],
+                        gameHash: undefined,
+                        stateHash: undefined,
+                      },
+                      { input: {}, duration: 1 },
+                    );
+                    const battleTypeFlags =
+                      (ctxWram[0x02022fec - 0x02000000] |
+                        (ctxWram[0x02022fed - 0x02000000] << 8) |
+                        (ctxWram[0x02022fee - 0x02000000] << 16) |
+                        (ctxWram[0x02022fef - 0x02000000] << 24)) >>>
+                      0;
+                    // gBattleOutcome != 0 means battle ended, but
+                    // gBattleTypeFlags may still be set (stale).
+                    const battleOutcome = ctxWram[0x0202433a - 0x02000000];
+                    const inBattle =
+                      battleTypeFlags !== 0 && battleOutcome === 0;
                     if (!inBattle) {
-                      // Overworld switch: execute directly (no party screen navigation needed)
+                      // Overworld switch: read sStartMenuCursorPos then navigate
                       const slot = parseInt(parts[3]);
-                      const ovCtx: MacroContext = {
-                        coreType: info.coreType, game: ctxGame, state: ctxBytes,
-                        frames: [], wram: new Uint8Array(0), av_info: {},
+                      let ovCtx: MacroContext = {
+                        coreType: info.coreType,
+                        game: ctxGame,
+                        state: ctxBytes,
+                        frames: [],
+                        wram: ctxWram,
+                        av_info: {},
                       };
-                      const ovResult = await executeMacro(pool, ovCtx, overworldSwitchMacro(slot));
-                      fs.writeFileSync(path.resolve("data", id, "state.sav"), ovResult.state);
-                      const { recording: recOv, recordingName: recNameOv, state: stOv, wram: wrOv } = await emulate(
-                        pool, info.coreType,
-                        new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
-                        ovResult.state,
-                        { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                      // START -> open menu
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: { START: true },
+                        duration: 4,
+                      });
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: {},
+                        duration: 20,
+                      });
+                      // Read cursor from ctxWram (sStartMenuCursorPos is static pre-menu)
+                      const cursorPos = ctxWram[0x0203760e - 0x02000000];
+                      const dp = Number.isFinite(cursorPos)
+                        ? (((1 - cursorPos) % 8) + 8) % 8
+                        : 1;
+                      for (let i = 0; i < dp; i++) {
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: { DOWN: true },
+                          duration: 2,
+                        });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: {},
+                          duration: 2,
+                        });
+                      }
+                      // A -> open party
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: { A: true },
+                        duration: 4,
+                      });
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: {},
+                        duration: 90,
+                      });
+                      // Navigate DOWN to target slot (cursor starts at 0 in SINGLE layout)
+                      for (let i = 0; i < slot; i++) {
+                        ovCtx = await emulateParallel(pool, ovCtx, { input: { DOWN: true }, duration: 4 });
+                        ovCtx = await emulateParallel(pool, ovCtx, { input: {}, duration: 6 });
+                      }
+                      // A -> select Pokemon (opens submenu)
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: { A: true },
+                        duration: 4,
+                      });
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: {},
+                        duration: 40,
+                      });
+                      // Use ctxWram (pre-navigation) — party data is static during menus
+                      const pkmn = readPartyPokemon(ctxWram, slot);
+                      const fieldMoveIds = new Set([15, 19, 57, 70, 91, 100, 127, 135, 148, 208, 230, 249, 250, 291]);
+                      let fmc = 0;
+                      for (const m of pkmn.moves) {
+                        if (m !== 0 && fieldMoveIds.has(m)) fmc++;
+                      }
+                      // DOWN to SWITCH (1 + fieldMoveCount from SUMMARY)
+                      for (let i = 0; i < 1 + fmc; i++) {
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: { DOWN: true },
+                          duration: 4,
+                        });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: {},
+                          duration: 4,
+                        });
+                      }
+                      // A -> select SWITCH
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: { A: true },
+                        duration: 4,
+                      });
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: {},
+                        duration: 40,
+                      });
+                      // UP back to slot 0
+                      for (let i = 0; i < slot; i++) {
+                        ovCtx = await emulateParallel(pool, ovCtx, { input: { UP: true }, duration: 4 });
+                        ovCtx = await emulateParallel(pool, ovCtx, { input: {}, duration: 6 });
+                      }
+                      // A -> confirm (slide animation plays, needs ~120f)
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: { A: true },
+                        duration: 4,
+                      });
+                      ovCtx = await emulateParallel(pool, ovCtx, {
+                        input: {},
+                        duration: 120,
+                      });
+                      // B presses to fully exit: party screen -> start menu -> overworld.
+                      // Fade transitions between screens need generous waits.
+                      for (let i = 0; i < 5; i++) {
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: { B: true },
+                          duration: 4,
+                        });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: {},
+                          duration: 20,
+                        });
+                      }
+                      // Verify we are back in overworld (battle flags == 0). If not, more B.
+                      const ovCheck =
+                        (ovCtx.wram[0x02022fec - 0x02000000] |
+                          (ovCtx.wram[0x02022fed - 0x02000000] << 8) |
+                          (ovCtx.wram[0x02022fee - 0x02000000] << 16) |
+                          (ovCtx.wram[0x02022fef - 0x02000000] << 24)) >>>
+                        0;
+                      if (ovCheck !== 0) {
+                        for (let i = 0; i < 3; i++) {
+                          ovCtx = await emulateParallel(pool, ovCtx, {
+                            input: { B: true },
+                            duration: 4,
+                          });
+                          ovCtx = await emulateParallel(pool, ovCtx, {
+                            input: {},
+                            duration: 20,
+                          });
+                        }
+                      }
+                      fs.writeFileSync(
+                        path.resolve("data", id, "state.sav"),
+                        ovCtx.state,
+                      );
+                      const {
+                        recording: recOv,
+                        recordingName: recNameOv,
+                        state: stOv,
+                        wram: wrOv,
+                      } = await emulate(
+                        pool,
+                        info.coreType,
+                        new Uint8Array(
+                          fs.readFileSync(path.resolve("data", id, info.game)),
+                        ),
+                        ovCtx.state,
+                        {
+                          ...info,
+                          inputAssist: InputAssist.Autoplay,
+                          inputAssistSpeed: InputAssistSpeed.Normal,
+                        },
                         [],
                       );
-                      fs.writeFileSync(path.resolve("data", id, "state.sav"), stOv);
+                      fs.writeFileSync(
+                        path.resolve("data", id, "state.sav"),
+                        stOv,
+                      );
                       const { rows: ovRows } = generateLayout(wrOv, id, 1);
                       await message.channel.send({
-                        content: (player.nickname || player.displayName) + ": Switched lead",
+                        content:
+                          (player.nickname || player.displayName) +
+                          ": Switched lead",
                         files: [{ attachment: recOv, name: recNameOv }],
                         components: ovRows as any,
                       });
@@ -687,17 +852,29 @@ const main = async () => {
                     const targetSlot = parseInt(parts[3]);
                     // Read gBattlePartyCurrentOrder (3 bytes at 0x0203CF00, nibble-packed)
                     // to find which display position has the target party slot
-                    const orderBase = 0x0203CF00 - 0x02000000;
+                    const orderBase = 0x0203cf00 - 0x02000000;
                     let displayPos = 0;
                     for (let dp = 0; dp < 6; dp++) {
                       const byteIdx = orderBase + Math.floor(dp / 2);
-                      const nibble = (dp % 2 === 0) ? (navRes.wram[byteIdx] >> 4) : (navRes.wram[byteIdx] & 0x0F);
-                      if (nibble === targetSlot) { displayPos = dp; break; }
+                      const nibble =
+                        dp % 2 === 0
+                          ? navRes.wram[byteIdx] >> 4
+                          : navRes.wram[byteIdx] & 0x0f;
+                      if (nibble === targetSlot) {
+                        displayPos = dp;
+                        break;
+                      }
                     }
                     // Navigate DOWN from cursor (slot 0) to display position
                     for (let i = 0; i < displayPos; i++) {
-                      navRes = await emulateParallel(pool, navRes, { input: { DOWN: true }, duration: 4 });
-                      navRes = await emulateParallel(pool, navRes, { input: {}, duration: 2 });
+                      navRes = await emulateParallel(pool, navRes, {
+                        input: { DOWN: true },
+                        duration: 4,
+                      });
+                      navRes = await emulateParallel(pool, navRes, {
+                        input: {},
+                        duration: 2,
+                      });
                     }
                     // Select and confirm
                     // Select the Pokemon
@@ -747,7 +924,9 @@ const main = async () => {
                       stSw,
                     );
 
-                    const idxAfter = wrSw[0x0202406e - 0x02000000] | (wrSw[0x0202406f - 0x02000000] << 8);
+                    const idxAfter =
+                      wrSw[0x0202406e - 0x02000000] |
+                      (wrSw[0x0202406f - 0x02000000] << 8);
                     const { rows: swRows2 } = generateLayout(wrSw, id, 1);
                     await message.channel.send({
                       content:

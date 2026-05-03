@@ -197,31 +197,69 @@ export function backMacro(): Macro {
 
 // ── Overworld Switch Macro ──────────────────────────────────────────────────
 
+/**
+ * Swap the Pokémon at partySlot with slot 0 from the overworld.
+ *
+ * Reliable approach (backed by pokeemerald decomp):
+ * - The start menu cursor persists across opens (sStartMenuCursorPos),
+ *   but UP from the top position does NOT wrap (Menu_MoveCursor clamps).
+ *   So we press UP 7x to guarantee we're at POKéDEX, then DOWN 1x to POKéMON.
+ * - The party screen cursor always defaults to slot 0 when opened from the
+ *   overworld start menu (InitPartyMenu with keepCursorPos=FALSE).
+ */
 export function overworldSwitchMacro(partySlot: number): Macro {
   if (partySlot < 0 || partySlot > 5) {
     throw new Error("Invalid party slot: " + partySlot + ". Must be 0-5.");
   }
   if (partySlot === 0) return [];
+
   const steps: MacroStep[] = [
-    { ...START }, { ...idle(10) },
-    { ...A }, { ...idle(60) },
+    // Open start menu
+    { ...START },
+    { ...idle(20) },
   ];
+
+  // Reset cursor to top (UP 7x — 7 is enough for any position in an 8-item menu
+  // since the cursor clamps at the top and does not wrap).
+  for (let i = 0; i < 7; i++) {
+    steps.push({ ...UP }, { ...idle(2) });
+  }
+
+  // Navigate to POKéMON (1 DOWN from POKéDEX) and open party screen
+  steps.push({ ...DOWN }, { ...idle(6) }, { ...A }, { ...idle(90) });
+
+  // Navigate down to the target party slot (cursor starts at slot 0)
   for (let i = 0; i < partySlot; i++) {
     steps.push({ ...DOWN }, { ...idle(4) });
   }
+
+  // Select the Pokémon → opens submenu (Summary / Switch / Item / Cancel)
   steps.push(
-    { ...A }, { ...idle(30) },
-    { ...DOWN }, { ...idle(4) },
-    { ...A }, { ...idle(30) },
+    { ...A },
+    { ...idle(40) },
+    // Move cursor down to "Switch" (second option below "Summary")
+    { ...DOWN },
+    { ...idle(6) },
+    { ...A },
+    { ...idle(40) },
   );
+
+  // Move the cursor back up to slot 0 for the swap destination
   for (let i = 0; i < partySlot; i++) {
     steps.push({ ...UP }, { ...idle(4) });
   }
+
+  // Confirm placement at slot 0, then back out of all menus
   steps.push(
-    { ...A }, { ...idle(20) },
-    { ...B }, { ...idle(10) },
-    { ...B }, { ...idle(10) },
-    { ...B }, { ...idle(10) },
+    { ...A },
+    { ...idle(30) },
+    { ...B },
+    { ...idle(12) },
+    { ...B },
+    { ...idle(12) },
+    { ...B },
+    { ...idle(12) },
   );
+
   return steps;
 }
