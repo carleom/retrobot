@@ -677,11 +677,21 @@ const main = async () => {
                       wram: new Uint8Array(0),
                       av_info: {},
                     };
+                    const hashState = (buf: Uint8Array) => {
+                      let h = 0;
+                      for (let i = 0; i < Math.min(buf.length, 1024); i++)
+                        h = ((h << 5) - h + buf[i]) | 0;
+                      return (h >>> 0).toString(16);
+                    };
                     itemCtx = await emulateParallel(pool, itemCtx, {
                       input: {},
                       duration: 1,
                     });
                     const findWram = itemCtx.wram;
+                    console.log(
+                      "[item] state hash after init emu: " +
+                        hashState(itemCtx.state),
+                    );
                     const items = readBagPocket(findWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
                     const slotIndex = found ? found.slotIndex : 0;
@@ -728,6 +738,10 @@ const main = async () => {
                       input: {},
                       duration: 4,
                     });
+                    console.log(
+                      "[item] state hash after resetToFight: " +
+                        hashState(itemCtx.state),
+                    );
 
                     // Phase 2: RIGHT to BAG, press A
                     itemCtx = await emulateParallel(pool, itemCtx, {
@@ -746,6 +760,10 @@ const main = async () => {
                       input: {},
                       duration: 4,
                     });
+                    console.log(
+                      "[item] state hash after RIGHT+A: " +
+                        hashState(itemCtx.state),
+                    );
 
                     // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
                     console.log(
@@ -758,8 +776,15 @@ const main = async () => {
                         duration: 2,
                       });
                       const scene = emeraldSceneDetector.detect(itemCtx.wram);
-                      if (poll < 3 || poll % 10 === 0)
+                      if (poll < 3 || poll % 10 === 0) {
                         console.log("[item] poll " + poll + " scene=" + scene);
+                        console.log(
+                          "[item] state hash poll " +
+                            poll +
+                            ": " +
+                            hashState(itemCtx.state),
+                        );
+                      }
                       if (scene === Scene.BATTLE_BAG_POCKET) break;
                     }
                     console.log(
