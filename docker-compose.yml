@@ -1,0 +1,9 @@
+version: "3"
+services:
+  retrobot:
+    build: .
+    volumes:
+      - ./data:/retrobot/data
+    env_file:
+      - .env
+    restart: unless-stopped
