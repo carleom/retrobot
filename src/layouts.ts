@@ -533,7 +533,7 @@ export function buildPkmnSwitch(
         buttons.push(
           btn(noneId(gameId), "— empty —", ButtonStyle.Secondary, true),
         );
-      } else if (pkmn.currentHp === 0) {      } else if (pkmn.currentHp === 0) {
+      } else if (pkmn.currentHp === 0) {
         // Fainted — can't switch to it
         const name = speciesName(pkmn.species);
         buttons.push(
