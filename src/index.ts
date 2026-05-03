@@ -71,6 +71,7 @@ import {
   runMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
+import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
 import { Frame } from "./worker";
 import encode from "image-encode";
 import { arraysEqual, rgb565toRaw } from "./util";
@@ -245,7 +246,20 @@ const main = async () => {
   const uploadEmojisCmd = new SlashCommandBuilder()
     .setName("upload_emojis")
     .setDescription("Upload item emojis to this server for button use");
-  client.application.commands.set([command, uploadEmojisCmd]);
+  const dexCmd = new SlashCommandBuilder()
+    .setName("dex")
+    .setDescription("Look up a Pokemon")
+    .addStringOption((opt) =>
+      opt
+        .setName("pokemon")
+        .setDescription("Pokemon name")
+        .setRequired(true)
+        .setAutocomplete(true),
+    )
+    .addBooleanOption((opt) =>
+      opt.setName("moves").setDescription("Show learnable moves"),
+    );
+  client.application.commands.set([command, uploadEmojisCmd, dexCmd]);
 
   await unlockGames(client);
 
@@ -357,6 +371,19 @@ const main = async () => {
       );
 
       try {
+        if (interaction.isAutocomplete()) {
+          if (interaction.commandName === "dex") {
+            const focused = interaction.options.getFocused(true);
+            if (focused.name === "pokemon") {
+              const results = searchSpecies(focused.value);
+              await interaction.respond(
+                results.map((name) => ({ name, value: name })),
+              );
+              return;
+            }
+          }
+        }
+
         if (interaction.isCommand() && isAdmin) {
           if (interaction.commandName == "upload_emojis") {
             await interaction.deferReply({ ephemeral: true });
@@ -386,6 +413,29 @@ const main = async () => {
             await interaction.editReply({
               content: "Uploaded " + files.length + " emojis!",
             });
+            return;
+          }
+          if (interaction.commandName === "dex") {
+            await interaction.deferReply();
+            const name = interaction.options.get("pokemon", true)
+              .value as string;
+            const showMoves = (interaction.options.get("moves")?.value as boolean) ?? false;
+            try {
+              const entry = await getDexEntry(name);
+              const lines = [
+                `**#${entry.id} ${entry.name}** — ${entry.types}`,
+                `**Evolves:** ${entry.evolution}`,
+              ];
+              if (showMoves) {
+                const moves = await getDexMoves(name);
+                lines.push("", moves);
+              }
+              await interaction.editReply(lines.join("\n"));
+            } catch (e: any) {
+              await interaction.editReply(
+                `Pokemon "${name}" not found. Check spelling and try again.`,
+              );
+            }
             return;
           }
           if (interaction.commandName == "settings") {
