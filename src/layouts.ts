@@ -103,6 +103,7 @@ const ADDR = {
   bagBalls: 0x02026050, // 16 slots
   bagTmsHms: 0x02026090, // 64 slots
   bagBerries: 0x02026190, // 46 slots
+  gBagPockets: 0x02039dd8,
 } as const;
 
 const POKEMON_SIZE = 0x64; // bytes per party Pokemon
@@ -247,51 +248,54 @@ function findBagItem(
   return found ? found.quantity : 0;
 }
 
-/** Read all items from a bag pocket. Returns non-empty slots only. */
+/** Read all items from a bag pocket using gBagPockets pointer chain. */
 function readBagPocket(wram: Uint8Array, pocketIndex: number): BagItem[] {
-  const startAddr = POCKET_ADDRS[pocketIndex];
-  const capacity = POCKET_CAPS[pocketIndex];
-  if (!startAddr || !capacity) return [];
+  const BAG_POCKETS_ADDR = 0x02039dd8;
+  const pocketAddr = BAG_POCKETS_ADDR + pocketIndex * 8;
 
-  const encryptionKey = readU32(wram, ADDR.encryptionKey);
-  if (pocketIndex === 0) {
-    console.log(
-      "[bag] key=0x" +
-        encryptionKey.toString(16) +
-        " addr=0x" +
-        startAddr.toString(16) +
-        " wramLen=" +
-        wram.length +
-        " keyOff=" +
-        (ADDR.encryptionKey - 0x02000000) +
-        " startOff=" +
-        (startAddr - 0x02000000),
-    );
-    for (let di = 0; di < 5 && di < capacity; di++) {
-      const sa = startAddr + di * 4;
-      const iid = readU16(wram, sa);
-      const eq = readU16(wram, sa + 2);
-      console.log(
-        "  [" +
-          di +
-          "] itemId=" +
-          iid +
-          " encQty=" +
-          eq +
-          " decQty=" +
-          (eq ^ (encryptionKey & 0xffff)),
-      );
-    }
+  // Read itemSlots pointer and capacity from gBagPockets[pocketIndex]
+  const itemSlotsPtr = readU32(wram, pocketAddr);
+  const capacity = readU8(wram, pocketAddr + 4);
+
+  // If pointer is null or capacity is 0, fall back to fixed save block address
+  if (!itemSlotsPtr || !capacity) {
+    // Fallback: try fixed save block addresses
+    const fallbackAddr = POCKET_ADDRS[pocketIndex];
+    const fallbackCap = POCKET_CAPS[pocketIndex];
+    if (!fallbackAddr || !fallbackCap) return [];
+    return readBagSlots(wram, fallbackAddr, fallbackCap);
   }
+
+  return readBagSlots(wram, itemSlotsPtr, capacity);
+}
+
+/** Read item slots from a given address with the given capacity. */
+function readBagSlots(
+  wram: Uint8Array,
+  slotsAddr: number,
+  capacity: number,
+): BagItem[] {
+  const encryptionKey = readU32(wram, ADDR.encryptionKey);
   const items: BagItem[] = [];
 
+  // Debug log
+  console.log(
+    "[bag] key=0x" +
+      encryptionKey.toString(16) +
+      " slotsAddr=0x" +
+      slotsAddr.toString(16) +
+      " capacity=" +
+      capacity +
+      " wramLen=" +
+      wram.length,
+  );
+
   for (let i = 0; i < capacity; i++) {
-    const slotAddr = startAddr + i * 4;
+    const slotAddr = slotsAddr + i * 4;
     const itemId = readU16(wram, slotAddr);
     const encryptedQty = readU16(wram, slotAddr + 2);
     const quantity = encryptedQty ^ (encryptionKey & 0xffff);
 
-    // Empty slot: itemId == 0 or quantity == 0 (after XOR in compacted bags)
     if (itemId !== 0 && quantity !== 0) {
       items.push({ itemId, quantity, slotIndex: i });
     }
