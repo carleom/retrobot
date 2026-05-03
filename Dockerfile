@@ -3,7 +3,7 @@ FROM node:18-alpine
 WORKDIR /retrobot
 
 RUN apk add --no-cache git python3 xz-dev make g++
-RUN npm install --global yarn cross-env forever
+RUN npm install --global cross-env forever
 
 COPY . .
 
