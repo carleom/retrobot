@@ -718,12 +718,32 @@ const main = async () => {
 
                     // Phase 4: Read items, find display position, navigate DOWN
                     const items = readBagPocket(bagCtx.wram, itemPocket);
+                    console.log(
+                      "[item] raw items: " +
+                        items
+                          .map((it: any) => it.slotIndex + ":" + it.itemId)
+                          .join(", "),
+                    );
+                    const sorted = [...items].sort(
+                      (a, b) => a.slotIndex - b.slotIndex,
+                    );
+                    console.log(
+                      "[item] sorted: " +
+                        sorted
+                          .map(
+                            (it: any, i: number) =>
+                              i +
+                              ":" +
+                              it.itemId +
+                              "(slot" +
+                              it.slotIndex +
+                              ")",
+                          )
+                          .join(", "),
+                    );
                     const found = items.find((it: any) => it.itemId === itemId);
                     let displayPos = 0;
                     if (found) {
-                      const sorted = [...items].sort(
-                        (a, b) => a.slotIndex - b.slotIndex,
-                      );
                       displayPos = sorted.findIndex(
                         (it) => it.itemId === itemId,
                       );
