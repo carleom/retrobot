@@ -259,7 +259,13 @@ function readBagPocket(wram: Uint8Array, pocketIndex: number): BagItem[] {
       "[bag] key=0x" +
         encryptionKey.toString(16) +
         " addr=0x" +
-        startAddr.toString(16),
+        startAddr.toString(16) +
+        " wramLen=" +
+        wram.length +
+        " keyOff=" +
+        (ADDR.encryptionKey - 0x02000000) +
+        " startOff=" +
+        (startAddr - 0x02000000),
     );
     for (let di = 0; di < 5 && di < capacity; di++) {
       const sa = startAddr + di * 4;
