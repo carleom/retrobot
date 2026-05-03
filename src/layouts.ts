@@ -254,6 +254,29 @@ function readBagPocket(wram: Uint8Array, pocketIndex: number): BagItem[] {
   if (!startAddr || !capacity) return [];
 
   const encryptionKey = readU32(wram, ADDR.encryptionKey);
+  if (pocketIndex === 0) {
+    console.log(
+      "[bag] key=0x" +
+        encryptionKey.toString(16) +
+        " addr=0x" +
+        startAddr.toString(16),
+    );
+    for (let di = 0; di < 5 && di < capacity; di++) {
+      const sa = startAddr + di * 4;
+      const iid = readU16(wram, sa);
+      const eq = readU16(wram, sa + 2);
+      console.log(
+        "  [" +
+          di +
+          "] itemId=" +
+          iid +
+          " encQty=" +
+          eq +
+          " decQty=" +
+          (eq ^ (encryptionKey & 0xffff)),
+      );
+    }
+  }
   const items: BagItem[] = [];
 
   for (let i = 0; i < capacity; i++) {
