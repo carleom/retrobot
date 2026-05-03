@@ -1023,6 +1023,7 @@ const main = async () => {
                 }
 
                 // Raw input + context-aware layout)
+                await interaction.deferUpdate();
                 message.channel.sendTyping();
                 const playerInputs = range(0, parseInt(multiplier)).map(() =>
                   parseInput(button),
