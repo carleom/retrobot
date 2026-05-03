@@ -677,11 +677,11 @@ const main = async () => {
                       wram: new Uint8Array(0),
                       av_info: {},
                     };
-                    const { wram: findWram } = await emulateParallel(
-                      pool,
-                      itemCtx,
-                      { input: {}, duration: 1 },
-                    );
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 1,
+                    });
+                    const findWram = itemCtx.wram;
                     const items = readBagPocket(findWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
                     const slotIndex = found ? found.slotIndex : 0;
