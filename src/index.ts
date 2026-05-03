@@ -765,21 +765,39 @@ const main = async () => {
                     );
 
                     const navSteps: MacroStep[] = [];
-                    // Navigate DOWN from current cursor to target, wrapping past CANCEL
-                    const wrapLength = items.length + 1; // +1 for CANCEL at bottom
-                    const deltaDown =
-                      (displayPos - cursorPos + wrapLength) % wrapLength;
-                    console.log(
-                      "[item] navigating from cursor " +
-                        cursorPos +
-                        " to " +
-                        displayPos +
-                        " deltaDown=" +
-                        deltaDown,
-                    );
-                    for (let i = 0; i < deltaDown; i++) {
-                      navSteps.push({ input: { DOWN: true }, duration: 4 });
-                      navSteps.push({ input: {}, duration: 4 });
+                    // Navigate from current cursor to target (no wrapping in bag)
+                    if (cursorPos > displayPos) {
+                      const deltaUp = cursorPos - displayPos;
+                      console.log(
+                        "[item] cursor " +
+                          cursorPos +
+                          " → " +
+                          displayPos +
+                          " UP×" +
+                          deltaUp,
+                      );
+                      for (let i = 0; i < deltaUp; i++) {
+                        navSteps.push({ input: { UP: true }, duration: 4 });
+                        navSteps.push({ input: {}, duration: 4 });
+                      }
+                    } else if (displayPos > cursorPos) {
+                      const deltaDown = displayPos - cursorPos;
+                      console.log(
+                        "[item] cursor " +
+                          cursorPos +
+                          " → " +
+                          displayPos +
+                          " DOWN×" +
+                          deltaDown,
+                      );
+                      for (let i = 0; i < deltaDown; i++) {
+                        navSteps.push({ input: { DOWN: true }, duration: 4 });
+                        navSteps.push({ input: {}, duration: 4 });
+                      }
+                    } else {
+                      console.log(
+                        "[item] cursor already at target " + cursorPos,
+                      );
                     }
                     // A: select item from bag list → opens USE/CANCEL submenu
                     navSteps.push({ input: { A: true }, duration: 4 });
