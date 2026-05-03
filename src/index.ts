@@ -748,17 +748,36 @@ const main = async () => {
                         (it) => it.itemId === itemId,
                       );
                     }
+                    // Read current bag cursor position (gBagPosition.cursorPosition[pocket])
+                    const cursorAddr = 0x0203ce60 + itemPocket * 2;
+                    const cursorPos =
+                      bagCtx.wram[cursorAddr - 0x02000000] |
+                      (bagCtx.wram[cursorAddr + 1 - 0x02000000] << 8);
                     console.log(
                       "[item] itemId=" +
                         itemId +
                         " displayPos=" +
                         displayPos +
                         " itemCount=" +
-                        items.length,
+                        items.length +
+                        " cursorAt=" +
+                        cursorPos,
                     );
 
                     const navSteps: MacroStep[] = [];
-                    for (let i = 0; i < displayPos; i++) {
+                    // Navigate DOWN from current cursor to target, wrapping past CANCEL
+                    const wrapLength = items.length + 1; // +1 for CANCEL at bottom
+                    const deltaDown =
+                      (displayPos - cursorPos + wrapLength) % wrapLength;
+                    console.log(
+                      "[item] navigating from cursor " +
+                        cursorPos +
+                        " to " +
+                        displayPos +
+                        " deltaDown=" +
+                        deltaDown,
+                    );
+                    for (let i = 0; i < deltaDown; i++) {
                       navSteps.push({ input: { DOWN: true }, duration: 4 });
                       navSteps.push({ input: {}, duration: 4 });
                     }
