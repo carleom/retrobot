@@ -73,7 +73,7 @@ export function readU16(wram: Uint8Array, absoluteAddress: number): number {
       `Address 0x${absoluteAddress.toString(16).toUpperCase()} is out of WRAM bounds for u16 read`,
     );
   }
-  return wram[offset] | (wram[offset + 1] << 8);
+  return (wram[offset] | (wram[offset + 1] << 8)) >>> 0;
 }
 
 /**
@@ -87,10 +87,11 @@ export function readU32(wram: Uint8Array, absoluteAddress: number): number {
     );
   }
   return (
-    wram[offset] |
-    (wram[offset + 1] << 8) |
-    (wram[offset + 2] << 16) |
-    (wram[offset + 3] << 24) >>> 0
+    (wram[offset] |
+      (wram[offset + 1] << 8) |
+      (wram[offset + 2] << 16) |
+      (wram[offset + 3] << 24)) >>>
+    0
   );
 }
 
