@@ -663,8 +663,6 @@ const main = async () => {
                     // Format: macro-item-POCKET-ITEMID (e.g., macro-item-0-13)
                     const itemPocket = parseInt(parts[3]);
                     const itemId = parseInt(parts[4]);
-                    await interaction.deferUpdate();
-                    message.channel.sendTyping();
 
                     // Load state and find the item slot
                     let itemCtx: MacroContext = {
