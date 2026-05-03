@@ -60,7 +60,7 @@ import {
   readPartyPokemon,
 } from "./layouts";
 import { Scene } from "./scenes";
-import { EmeraldSceneDetector } from "./scenes/emerald";
+import { EmeraldSceneDetector, emeraldSceneDetector } from "./scenes/emerald";
 import { executeMacro, MacroContext, Macro } from "./macros";
 import {
   selectMoveMacro,
@@ -69,6 +69,10 @@ import {
   switchFromPartyMacro,
   overworldSwitchMacro,
   runMacro,
+  confirmTargetMacro,
+  prevTargetMacro,
+  nextTargetMacro,
+  cancelTargetMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
 import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
@@ -1007,6 +1011,21 @@ const main = async () => {
                       components: swRows2 as any,
                     });
                     return;
+                  } else if (parts[2] === "target") {
+                    const targetAction = parts[3];
+                    if (targetAction === "confirm") {
+                      macro = confirmTargetMacro();
+                      macroLabel = "Confirm Target";
+                    } else if (targetAction === "left") {
+                      macro = prevTargetMacro();
+                      macroLabel = "Prev Target";
+                    } else if (targetAction === "right") {
+                      macro = nextTargetMacro();
+                      macroLabel = "Next Target";
+                    } else {
+                      await interaction.update({});
+                      return;
+                    }
                   } else if (parts[2] === "run") {
                     macro = runMacro();
                     macroLabel = "Run";
@@ -1074,6 +1093,78 @@ const main = async () => {
                     components: macComponents as any,
                   });
                   return;
+                }
+
+                // Scene-aware B button handling: cancel target selection
+                if (button === "b") {
+                  const bStateBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, "state.sav")),
+                  );
+                  const bGameBytes = new Uint8Array(
+                    fs.readFileSync(path.resolve("data", id, info.game)),
+                  );
+                  const { wram: bWram } = await emulateParallel(
+                    pool,
+                    {
+                      coreType: info.coreType,
+                      game: bGameBytes,
+                      state: bStateBytes,
+                      frames: [],
+                      gameHash: undefined,
+                      stateHash: undefined,
+                    },
+                    { input: {}, duration: 1 },
+                  );
+                  const bScene = emeraldSceneDetector.detect(bWram);
+                  if (bScene === Scene.BATTLE_MOVE_TARGET) {
+                    await interaction.deferUpdate();
+                    message.channel.sendTyping();
+                    const bCtx: MacroContext = {
+                      coreType: info.coreType,
+                      game: bGameBytes,
+                      state: bStateBytes,
+                      frames: [],
+                      wram: bWram,
+                      av_info: {},
+                    };
+                    const cancelResult = await executeMacro(
+                      pool,
+                      bCtx,
+                      cancelTargetMacro(),
+                    );
+                    const {
+                      recording: bRecording,
+                      recordingName: bRecordingName,
+                      state: bFinalState,
+                      wram: bFinalWram,
+                    } = await emulate(
+                      pool,
+                      info.coreType,
+                      new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, info.game)),
+                      ),
+                      cancelResult.state,
+                      {
+                        ...info,
+                        inputAssist: InputAssist.Autoplay,
+                        inputAssistSpeed: InputAssistSpeed.Normal,
+                      },
+                      [],
+                    );
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      bFinalState,
+                    );
+                    const { rows: bRows } = generateLayout(bFinalWram, id, 1);
+                    await message.channel.send({
+                      content:
+                        (player.nickname || player.displayName) +
+                        ": Back to Moves",
+                      files: [{ attachment: bRecording, name: bRecordingName }],
+                      components: bRows as any,
+                    });
+                    return;
+                  }
                 }
 
                 // Raw input + context-aware layout)

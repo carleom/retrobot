@@ -217,14 +217,14 @@ export function readPartyPokemon(
   };
 }
 
-/** Get the player's active party Pokemon (first non-egg battler). */
+/** Get the player's active party Pokemon for the currently acting battler. */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
-  // Use gBattlerPartyIndexes to find the correct party slot for the active battler.
-  // During battle, swaps reorder the party; slot 0 is not always the active mon.
-  // Always use player battler 0, not gActiveBattler (may be enemy)
-  const idx = readU16(wram, 0x0202406e); // gBattlerPartyIndexes[0]
-  // Fall back to slot 0 if index is invalid or battle just started
-  const slot = idx >= 0 && idx <= 5 ? idx : 0;
+  // Read gActiveBattler to determine which player battler is acting.
+  // In doubles, battler 0 = left player mon, battler 2 = right player mon.
+  const activeBattler = readU8(wram, ADDR.gActiveBattler);
+  // gBattlerPartyIndexes is u8 per battler (not u16). Read the correct byte.
+  const partySlot = readU8(wram, 0x0202406e + activeBattler);
+  const slot = partySlot <= 5 ? partySlot : 0;
   return readPartyPokemon(wram, slot);
 }
 
@@ -343,6 +343,8 @@ export function generateLayout(
       return { rows: buildBagPocket(wram, gameId), scene };
     case Scene.BATTLE_PKMN_SWITCH:
       return { rows: buildPkmnSwitch(wram, gameId), scene };
+    case Scene.BATTLE_MOVE_TARGET:
+      return { rows: buildMoveTarget(wram, gameId), scene };
     case Scene.OVERWORLD:
     case Scene.TEXTBOX:
     case Scene.UNKNOWN:
@@ -489,6 +491,48 @@ function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
   // Row 2: Back to Fight Menu
   rows.push(row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)));
+
+  return rows;
+}
+
+// ── Move Target Layout (double battles — pick which enemy to hit) ────────────
+
+function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
+  const rows: ActionRowBuilder[] = [];
+  const battlersCount = readU8(wram, 0x0202406c);
+  const cursor = readU8(wram, 0x020244b0); // gMoveSelectionCursor[gActiveBattler]
+
+  // Build target buttons for enemy battlers (1 and 3 in doubles).
+  // Show LEFT/UP and RIGHT/DOWN navigation + confirm (A) + back (B).
+  const targetButtons: ButtonBuilder[] = [];
+
+  // Row 1: Target selection — show direction hints
+  targetButtons.push(
+    btn(
+      `${gameId}-macro-target-left`,
+      "⬅️ Prev Target",
+      ButtonStyle.Primary,
+      false,
+    ),
+    btn(
+      `${gameId}-macro-target-confirm`,
+      "✅ Confirm (A)",
+      ButtonStyle.Success,
+      false,
+    ),
+    btn(
+      `${gameId}-macro-target-right`,
+      "➡️ Next Target",
+      ButtonStyle.Primary,
+      false,
+    ),
+  );
+  rows.push(row(...targetButtons));
+
+  // Row 2: Back to move select
+  rows.push(
+    row(btn(`${gameId}-b-1`, "⬅️ Back to Moves", ButtonStyle.Secondary)),
+  );
 
   return rows;
 }

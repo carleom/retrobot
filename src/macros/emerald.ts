@@ -83,6 +83,28 @@ export function selectMoveMacro(slotIndex: number): Macro {
   return steps;
 }
 
+// ── Select Target Macro (double battles) ─────────────────────────────────────
+
+/** Confirm the current target selection (press A). */
+export function confirmTargetMacro(): Macro {
+  return [{ ...A, updateButtons: true }, { ...idle(30) }];
+}
+
+/** Navigate to previous target (LEFT or UP in target select). */
+export function prevTargetMacro(): Macro {
+  return [{ ...LEFT }, { ...idle(6) }];
+}
+
+/** Navigate to next target (RIGHT or DOWN in target select). */
+export function nextTargetMacro(): Macro {
+  return [{ ...RIGHT }, { ...idle(6) }];
+}
+
+/** Cancel target selection and return to move select (B). */
+export function cancelTargetMacro(): Macro {
+  return [{ ...B }, { ...idle(12) }];
+}
+
 // ── Use Item Macro ───────────────────────────────────────────────────────────
 
 export function useItemMacro(slotIndex: number = 0): Macro {

@@ -26,6 +26,9 @@ export enum Scene {
   /** Battle: Pokémon switch sub-menu (picking a party member). */
   BATTLE_PKMN_SWITCH = "BATTLE_PKMN_SWITCH",
 
+  /** Battle: move target selection (double battles — pick which enemy to hit). */
+  BATTLE_MOVE_TARGET = "BATTLE_MOVE_TARGET",
+
   /** Could not determine the scene. Fall back to raw controls. */
   UNKNOWN = "UNKNOWN",
 }

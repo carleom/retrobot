@@ -86,6 +86,13 @@ export class EmeraldSceneDetector implements SceneDetector {
       case BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN:
         // Sub-action picked (e.g., specific move/item selected). Still in the
         // sub-menu context — resolve by chosen action.
+        // In double battles, after a move is picked, the game asks for a target.
+        if (
+          this.isDoubleBattle(wram) &&
+          chosenAction === ChosenAction.B_ACTION_USE_MOVE
+        ) {
+          return Scene.BATTLE_MOVE_TARGET;
+        }
         return this._resolveSubMenu(chosenAction);
 
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY:
@@ -135,8 +142,8 @@ export class EmeraldSceneDetector implements SceneDetector {
     const comm = readU8(wram, ADDR.gBattleCommunication);
     // Stale flags: if comm state is invalid but we're on a real map
     if (comm > 4) {
-      const mapNum = readU8(wram, 0x02025A05);
-      if (mapNum !== 0 && mapNum !== 0xFF) return true;
+      const mapNum = readU8(wram, 0x02025a05);
+      if (mapNum !== 0 && mapNum !== 0xff) return true;
     }
     return comm === BattleCommState.STATE_BEFORE_ACTION_CHOSEN;
   }
