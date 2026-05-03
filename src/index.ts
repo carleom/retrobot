@@ -764,6 +764,14 @@ const main = async () => {
                       "[item] state hash after RIGHT+A: " +
                         hashState(itemCtx.state),
                     );
+                    console.log(
+                      "[item] cursor after RIGHT+A: " +
+                        itemCtx.wram[
+                          0x020244ac -
+                            0x02000000 +
+                            itemCtx.wram[0x02024064 - 0x02000000]
+                        ],
+                    );
 
                     // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
                     console.log(
