@@ -59,9 +59,25 @@ export async function executeMacro(
   ctx: MacroContext,
   macro: Macro,
 ): Promise<MacroContext> {
+  console.log("[macro] executing " + macro.length + " steps");
   let current = ctx;
 
-  for (const step of macro) {
+  for (let i = 0; i < macro.length; i++) {
+    const step = macro[i];
+    const inputKeys =
+      Object.keys(step.input)
+        .filter((k) => step.input[k as keyof InputState])
+        .join(",") || "none";
+    console.log(
+      "[macro] step " +
+        i +
+        "/" +
+        macro.length +
+        " input=" +
+        inputKeys +
+        " duration=" +
+        step.duration,
+    );
     current = await emulateParallel(pool, current, {
       input: step.input,
       duration: step.duration,
