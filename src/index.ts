@@ -774,9 +774,16 @@ const main = async () => {
                     );
 
                     // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
+                    const abPre = itemCtx.wram[0x02024064 - 0x02000000];
                     console.log(
                       "[item] starting poll, scene=" +
-                        emeraldSceneDetector.detect(itemCtx.wram),
+                        emeraldSceneDetector.detect(itemCtx.wram) +
+                        " comm=" +
+                        itemCtx.wram[0x02024332 - 0x02000000 + abPre] +
+                        " chosen=" +
+                        itemCtx.wram[0x0202421c - 0x02000000 + abPre] +
+                        " cursor=" +
+                        itemCtx.wram[0x020244ac - 0x02000000 + abPre],
                     );
                     for (let poll = 0; poll < 120; poll++) {
                       itemCtx = await emulateParallel(pool, itemCtx, {
@@ -785,12 +792,23 @@ const main = async () => {
                       });
                       const scene = emeraldSceneDetector.detect(itemCtx.wram);
                       if (poll < 3 || poll % 10 === 0) {
-                        console.log("[item] poll " + poll + " scene=" + scene);
+                        const ab = itemCtx.wram[0x02024064 - 0x02000000];
+                        const comm = itemCtx.wram[0x02024332 - 0x02000000 + ab];
+                        const chosen =
+                          itemCtx.wram[0x0202421c - 0x02000000 + ab];
+                        const cursor =
+                          itemCtx.wram[0x020244ac - 0x02000000 + ab];
                         console.log(
-                          "[item] state hash poll " +
+                          "[item] poll " +
                             poll +
-                            ": " +
-                            hashState(itemCtx.state),
+                            " scene=" +
+                            scene +
+                            " comm=" +
+                            comm +
+                            " chosen=" +
+                            chosen +
+                            " cursor=" +
+                            cursor,
                         );
                       }
                       if (scene === Scene.BATTLE_BAG_POCKET) break;
