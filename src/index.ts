@@ -380,7 +380,7 @@ const main = async () => {
               }
             }
             fs.writeFileSync(
-              "config/emoji_ids.json",
+              path.resolve(__dirname, "..", "config", "emoji_ids.json"),
               JSON.stringify(ids, null, 2),
             );
             await interaction.editReply({

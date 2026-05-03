@@ -30,11 +30,13 @@ const lookupsPath = path.join(
 const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 
 // Load custom emoji IDs (set by /upload_emojis command)
-const emojiIdsPath = path.join(__dirname, "..", "config", "emoji_ids.json");
-let emojiIds: Record<string, string> = {};
-try {
-  emojiIds = JSON.parse(fs.readFileSync(emojiIdsPath, "utf-8"));
-} catch (_) {}
+function getEmojiIds(): Record<string, string> {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "config", "emoji_ids.json"), "utf-8"));
+  } catch (_) {
+    return {};
+  }
+}
 // Map item IDs to emoji ID keys
 const itemEmojiMap: Record<number, string> = {
   4: "pokeball",
@@ -164,7 +166,10 @@ const SUBSTRUCT_ORDER = [
 ];
 
 /** Read party Pokemon at a given slot index (0-5). */
-export function readPartyPokemon(wram: Uint8Array, slotIndex: number): PartyPokemon {
+export function readPartyPokemon(
+  wram: Uint8Array,
+  slotIndex: number,
+): PartyPokemon {
   const base = ADDR.gPlayerParty + slotIndex * POKEMON_SIZE;
 
   // Read unencrypted metadata for the XOR key
@@ -405,7 +410,7 @@ function buildBattleFight(
     const ballButtons = ballIds.map((id) => {
       const qty = findBagItem(wram, 1, id);
       const name = itemName(id);
-      const ballEmoji = emojiIds[itemEmojiMap[id]] || undefined;
+      const ballEmoji = getEmojiIds()[itemEmojiMap[id]] || undefined;
       return btn(
         `${gameId}-macro-item-1-${id}`,
         ballEmoji ? "" : name,
@@ -422,7 +427,7 @@ function buildBattleFight(
   const itemButtons = healIds.map((id) => {
     const qty = findBagItem(wram, 0, id);
     const name = itemName(id);
-    const healEmoji = emojiIds[itemEmojiMap[id]] || undefined;
+    const healEmoji = getEmojiIds()[itemEmojiMap[id]] || undefined;
     return btn(
       `${gameId}-macro-item-0-${id}`,
       healEmoji ? "" : name,
