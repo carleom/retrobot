@@ -52,7 +52,7 @@ interface PokeAPIPokemon {
   id: number;
   name: string;
   types: { type: { name: string } }[];
-  evolution_chain: { url: string };
+  species: { url: string };
 }
 
 interface PokeAPIEvolutionChain {
@@ -195,8 +195,12 @@ export async function getDexEntry(name: string): Promise<DexEntry> {
     POKEAPI + "/pokemon/" + name.toLowerCase(),
   )) as PokeAPIPokemon;
 
+  const species = (await fetchJSON(poke.species.url)) as {
+    evolution_chain: { url: string };
+  };
+
   const evo = (await fetchJSON(
-    poke.evolution_chain.url,
+    species.evolution_chain.url,
   )) as PokeAPIEvolutionChain;
 
   return {
