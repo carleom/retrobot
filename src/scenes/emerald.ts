@@ -97,9 +97,9 @@ export class EmeraldSceneDetector implements SceneDetector {
 
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY:
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED:
-        // Turn is executing (animations). Return BATTLE_FIGHT as the
-        // closest actionable scene — the main menu will appear next.
-        return Scene.BATTLE_FIGHT;
+        // Action confirmed and executing — stay in sub-menu context
+        // (e.g. bag loading, move animating). Resolve by chosen action.
+        return this._resolveSubMenu(chosenAction);
 
       default:
         return Scene.UNKNOWN;
