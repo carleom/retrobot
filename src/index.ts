@@ -590,6 +590,7 @@ const main = async () => {
                   }
 
                   // Execute a full macro (move, item, switch-slot, run)
+                  await interaction.deferUpdate();
                   message.channel.sendTyping();
                   let macro: Macro;
                   let macroLabel: string;
@@ -702,8 +703,14 @@ const main = async () => {
                       });
                       // Navigate DOWN to target slot (cursor starts at 0 in SINGLE layout)
                       for (let i = 0; i < slot; i++) {
-                        ovCtx = await emulateParallel(pool, ovCtx, { input: { DOWN: true }, duration: 4 });
-                        ovCtx = await emulateParallel(pool, ovCtx, { input: {}, duration: 6 });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: { DOWN: true },
+                          duration: 4,
+                        });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: {},
+                          duration: 6,
+                        });
                       }
                       // A -> select Pokemon (opens submenu)
                       ovCtx = await emulateParallel(pool, ovCtx, {
@@ -716,7 +723,10 @@ const main = async () => {
                       });
                       // Use ctxWram (pre-navigation) — party data is static during menus
                       const pkmn = readPartyPokemon(ctxWram, slot);
-                      const fieldMoveIds = new Set([15, 19, 57, 70, 91, 100, 127, 135, 148, 208, 230, 249, 250, 291]);
+                      const fieldMoveIds = new Set([
+                        15, 19, 57, 70, 91, 100, 127, 135, 148, 208, 230, 249,
+                        250, 291,
+                      ]);
                       let fmc = 0;
                       for (const m of pkmn.moves) {
                         if (m !== 0 && fieldMoveIds.has(m)) fmc++;
@@ -743,8 +753,14 @@ const main = async () => {
                       });
                       // UP back to slot 0
                       for (let i = 0; i < slot; i++) {
-                        ovCtx = await emulateParallel(pool, ovCtx, { input: { UP: true }, duration: 4 });
-                        ovCtx = await emulateParallel(pool, ovCtx, { input: {}, duration: 6 });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: { UP: true },
+                          duration: 4,
+                        });
+                        ovCtx = await emulateParallel(pool, ovCtx, {
+                          input: {},
+                          duration: 6,
+                        });
                       }
                       // A -> confirm (slide animation plays, needs ~120f)
                       ovCtx = await emulateParallel(pool, ovCtx, {
