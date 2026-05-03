@@ -434,8 +434,10 @@ const main = async () => {
               }
               await interaction.editReply(lines.join("\n"));
             } catch (e: any) {
+              console.error("dex error:", e.message || e);
               await interaction.editReply(
-                `Pokemon "${name}" not found. Check spelling and try again.`,
+                `Pokemon "${name}" not found. Check spelling and try again.
+\`\`\`${e.message || e}\`\`\``,
               );
             }
             return;
