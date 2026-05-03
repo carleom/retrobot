@@ -685,6 +685,14 @@ const main = async () => {
                     const items = readBagPocket(findWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
                     const slotIndex = found ? found.slotIndex : 0;
+                    console.log(
+                      "[item] itemId=" +
+                        itemId +
+                        " slotIndex=" +
+                        slotIndex +
+                        " itemCount=" +
+                        items.length,
+                    );
                     macroLabel = itemName(itemId);
 
                     // Phase 1: resetToFight (UP×2, LEFT×2)
@@ -740,14 +748,24 @@ const main = async () => {
                     });
 
                     // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
+                    console.log(
+                      "[item] starting poll, scene=" +
+                        emeraldSceneDetector.detect(itemCtx.wram),
+                    );
                     for (let poll = 0; poll < 120; poll++) {
                       itemCtx = await emulateParallel(pool, itemCtx, {
                         input: {},
                         duration: 2,
                       });
                       const scene = emeraldSceneDetector.detect(itemCtx.wram);
+                      if (poll < 3 || poll % 10 === 0)
+                        console.log("[item] poll " + poll + " scene=" + scene);
                       if (scene === Scene.BATTLE_BAG_POCKET) break;
                     }
+                    console.log(
+                      "[item] poll done, final scene=" +
+                        emeraldSceneDetector.detect(itemCtx.wram),
+                    );
 
                     // Phase 4: Navigate DOWN to the item slot
                     for (let i = 0; i < slotIndex; i++) {
