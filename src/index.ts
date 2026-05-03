@@ -801,10 +801,10 @@ const main = async () => {
                     }
                     // A: select item from bag list → opens USE/CANCEL submenu
                     navSteps.push({ input: { A: true }, duration: 4 });
-                    navSteps.push({ input: {}, duration: 30 }); // wait for submenu
+                    navSteps.push({ input: {}, duration: 60 }); // wait for submenu
                     // A: select USE → opens party screen
                     navSteps.push({ input: { A: true }, duration: 4 });
-                    navSteps.push({ input: {}, duration: 60 }); // wait for party screen
+                    navSteps.push({ input: {}, duration: 120 }); // wait for party screen
                     // A: select first party Pokémon (slot 0 is default)
                     navSteps.push({ input: { A: true }, duration: 4 });
                     navSteps.push({ input: {}, duration: 60 });
