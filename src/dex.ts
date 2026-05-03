@@ -30,7 +30,10 @@ try {
 } catch (_) {}
 
 function formatEncounters(name: string): string {
-  const locs = encounters[name];
+  const locs =
+    encounters[name] ||
+    encounters[name.toUpperCase()] ||
+    encounters[name.toLowerCase()];
   if (!locs) return "";
   const lines = Object.entries(locs).map(
     ([loc, methods]) => "\u2022 " + loc + " (" + methods.join(", ") + ")",
@@ -71,31 +74,10 @@ interface PokeAPIChainLink {
   evolves_to: PokeAPIChainLink[];
 }
 
-// ── Type Emojis ──────────────────────────────────────────────────────────────
-
-const TYPE_EMOJI: Record<string, string> = {
-  normal: "\u2B1C",
-  fighting: "\uD83E\uDD4A",
-  flying: "\uD83D\uDD4A\uFE0F",
-  poison: "\u2620\uFE0F",
-  ground: "\uD83D\uDFEB",
-  rock: "\uD83E\uDEA8",
-  bug: "\uD83D\uDC1B",
-  ghost: "\uD83D\uDC7B",
-  steel: "\uD83D\uDD29",
-  fire: "\uD83D\uDD25",
-  water: "\uD83D\uDCA7",
-  grass: "\uD83C\uDF3F",
-  electric: "\u26A1",
-  psychic: "\uD83D\uDD2E",
-  ice: "\u2744\uFE0F",
-  dragon: "\uD83D\uDC09",
-  dark: "\uD83C\uDF11",
-  fairy: "\u2728",
-};
-
 function formatTypes(types: { type: { name: string } }[]): string {
-  return types.map((t) => TYPE_EMOJI[t.type.name] || t.type.name).join(" ");
+  return types
+    .map((t) => t.type.name.charAt(0).toUpperCase() + t.type.name.slice(1))
+    .join(" / ");
 }
 
 // ── Evolution Chain ──────────────────────────────────────────────────────────
