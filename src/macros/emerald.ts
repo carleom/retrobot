@@ -115,9 +115,9 @@ export function useItemMacro(slotIndex: number = 0): Macro {
   const steps: MacroStep[] = [
     ...resetToFight(),
     { ...RIGHT },
-    { ...idle(6) },
+    { ...idle(8) },
     { ...A },
-    { ...idle(60) },
+    { ...idle(120) }, // Wait for bag to animate open
   ];
 
   for (let i = 0; i < slotIndex; i++) {
@@ -207,9 +207,9 @@ export function openBagMacro(): Macro {
   return [
     ...resetToFight(),
     { ...RIGHT },
-    { ...idle(6) },
+    { ...idle(8) },
     { ...A },
-    { ...idle(60) },
+    { ...idle(120) },
   ];
 }
 
