@@ -218,13 +218,10 @@ export function readPartyPokemon(
   };
 }
 
-/** Get the player's active party Pokemon for the currently acting battler. */
+/** Get the player's active party Pokemon. Always uses battler 0 (player's first mon).
+ *  Do NOT use gActiveBattler — it can point to the enemy during turn transitions. */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
-  // Read gActiveBattler to determine which player battler is acting.
-  // In doubles, battler 0 = left player mon, battler 2 = right player mon.
-  const activeBattler = readU8(wram, ADDR.gActiveBattler);
-  // gBattlerPartyIndexes is u8 per battler (not u16). Read the correct byte.
-  const partySlot = readU8(wram, 0x0202406e + activeBattler);
+  const partySlot = readU8(wram, 0x0202406e); // gBattlerPartyIndexes[0] (u8, not u16)
   const slot = partySlot <= 5 ? partySlot : 0;
   return readPartyPokemon(wram, slot);
 }
