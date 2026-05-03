@@ -431,6 +431,9 @@ const main = async () => {
                 `**#${entry.id} ${entry.name}** — ${entry.types}`,
                 `**Evolves:** ${entry.evolution}`,
               ];
+              if (entry.stats) lines.push(`**Stats:** ${entry.stats}`);
+              if (entry.abilities)
+                lines.push("**Abilities:**\n" + entry.abilities);
               if (entry.locations) lines.push(entry.locations);
               if (showMoves) {
                 const moves = await getDexMoves(name);

@@ -56,6 +56,11 @@ interface PokeAPIPokemon {
   name: string;
   types: { type: { name: string } }[];
   species: { url: string };
+  stats: { base_stat: number; stat: { name: string } }[];
+  abilities: {
+    ability: { name: string; url: string };
+    is_hidden: boolean;
+  }[];
 }
 
 interface PokeAPIEvolutionChain {
@@ -78,6 +83,65 @@ function formatTypes(types: { type: { name: string } }[]): string {
   return types
     .map((t) => t.type.name.charAt(0).toUpperCase() + t.type.name.slice(1))
     .join(" / ");
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+
+const STAT_LABELS: Record<string, string> = {
+  hp: "HP",
+  attack: "ATK",
+  defense: "DEF",
+  "special-attack": "SPA",
+  "special-defense": "SPD",
+  speed: "SPE",
+};
+
+function formatStats(
+  stats: { base_stat: number; stat: { name: string } }[],
+): string {
+  const parts: string[] = [];
+  let total = 0;
+  for (const s of stats) {
+    const label =
+      STAT_LABELS[s.stat.name] || s.stat.name.slice(0, 3).toUpperCase();
+    const val = String(s.base_stat).padStart(3);
+    parts.push(`${label} ${val}`);
+    total += s.base_stat;
+  }
+  parts.push(`TOT ${total}`);
+  return parts.join(" / ");
+}
+
+// ── Abilities ────────────────────────────────────────────────────────────────
+
+interface PokeAPIAbility {
+  effect_entries: {
+    effect: string;
+    short_effect: string;
+    language: { name: string };
+  }[];
+}
+
+async function formatAbilities(
+  abilities: { ability: { name: string; url: string }; is_hidden: boolean }[],
+): Promise<string> {
+  const lines: string[] = [];
+  for (const a of abilities) {
+    const name = a.ability.name
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    try {
+      const data = (await fetchJSON(a.ability.url)) as PokeAPIAbility;
+      const en = data.effect_entries.find((e) => e.language.name === "en");
+      const desc = en?.short_effect || en?.effect || "";
+      const suffix = a.is_hidden ? " (Hidden)" : "";
+      lines.push(`**${name}**${suffix}: ${desc}`);
+    } catch {
+      lines.push(`**${name}**${a.is_hidden ? " (Hidden)" : ""}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 // ── Evolution Chain ──────────────────────────────────────────────────────────
@@ -169,6 +233,8 @@ export interface DexEntry {
   types: string;
   evolution: string;
   locations?: string;
+  stats?: string;
+  abilities?: string;
   moves?: Record<string, string[]>;
 }
 
@@ -191,6 +257,8 @@ export async function getDexEntry(name: string): Promise<DexEntry> {
     types: formatTypes(poke.types),
     evolution: formatEvolution(evo.chain),
     locations: formatEncounters(poke.name),
+    stats: formatStats(poke.stats),
+    abilities: await formatAbilities(poke.abilities),
   };
 }
 
