@@ -663,30 +663,162 @@ const main = async () => {
                     // Format: macro-item-POCKET-ITEMID (e.g., macro-item-0-13)
                     const itemPocket = parseInt(parts[3]);
                     const itemId = parseInt(parts[4]);
-                    // Read WRAM to find the item's slot position in the bag
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
-                    const { wram: itemWram } = await emulateParallel(
+                    await interaction.deferUpdate();
+                    message.channel.sendTyping();
+
+                    // Load state and find the item slot
+                    let itemCtx: MacroContext = {
+                      coreType: info.coreType,
+                      game: new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, info.game)),
+                      ),
+                      state: new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, "state.sav")),
+                      ),
+                      frames: [],
+                      wram: new Uint8Array(0),
+                      av_info: {},
+                    };
+                    const { wram: findWram } = await emulateParallel(
                       pool,
-                      {
-                        coreType: info.coreType,
-                        game: gameBytes,
-                        state: stateBytes,
-                        frames: [],
-                        gameHash: undefined,
-                        stateHash: undefined,
-                      },
+                      itemCtx,
                       { input: {}, duration: 1 },
                     );
-                    const items = readBagPocket(itemWram, itemPocket);
+                    const items = readBagPocket(findWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
                     const slotIndex = found ? found.slotIndex : 0;
-                    macro = useItemMacro(slotIndex);
                     macroLabel = itemName(itemId);
+
+                    // Phase 1: resetToFight (UP×2, LEFT×2)
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { UP: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { UP: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { LEFT: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { LEFT: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 4,
+                    });
+
+                    // Phase 2: RIGHT to BAG, press A
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { RIGHT: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 12,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { A: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 4,
+                    });
+
+                    // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
+                    for (let poll = 0; poll < 120; poll++) {
+                      itemCtx = await emulateParallel(pool, itemCtx, {
+                        input: {},
+                        duration: 2,
+                      });
+                      const scene = emeraldSceneDetector.detect(itemCtx.wram);
+                      if (scene === Scene.BATTLE_BAG_POCKET) break;
+                    }
+
+                    // Phase 4: Navigate DOWN to the item slot
+                    for (let i = 0; i < slotIndex; i++) {
+                      itemCtx = await emulateParallel(pool, itemCtx, {
+                        input: { DOWN: true },
+                        duration: 4,
+                      });
+                      itemCtx = await emulateParallel(pool, itemCtx, {
+                        input: {},
+                        duration: 4,
+                      });
+                    }
+
+                    // Phase 5: Select item (A), wait, confirm use (A)
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { A: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 8,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: { A: true },
+                      duration: 4,
+                    });
+                    itemCtx = await emulateParallel(pool, itemCtx, {
+                      input: {},
+                      duration: 60,
+                    });
+
+                    // Save state and let autoplay handle text/animations
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      itemCtx.state,
+                    );
+                    const {
+                      recording,
+                      recordingName,
+                      state: finalState,
+                      wram: finalWram,
+                    } = await emulate(
+                      pool,
+                      info.coreType,
+                      new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, info.game)),
+                      ),
+                      itemCtx.state,
+                      {
+                        ...info,
+                        inputAssist: InputAssist.Autoplay,
+                        inputAssistSpeed: InputAssistSpeed.Normal,
+                      },
+                      [],
+                    );
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      finalState,
+                    );
+                    const { rows: itemRows } = generateLayout(finalWram, id, 1);
+                    await message.channel.send({
+                      content:
+                        (player.nickname || player.displayName) +
+                        ": Used " +
+                        macroLabel,
+                      files: [{ attachment: recording, name: recordingName }],
+                      components: itemRows as any,
+                    });
+                    return;
                   } else if (parts[2] === "switch") {
                     // Check if we are in battle or overworld
                     const ctxBytes = new Uint8Array(
