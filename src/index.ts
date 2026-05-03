@@ -766,15 +766,11 @@ const main = async () => {
                     );
                     console.log(
                       "[item] cursor after RIGHT+A: " +
-                        itemCtx.wram[
-                          0x020244ac -
-                            0x02000000 +
-                            itemCtx.wram[0x02024064 - 0x02000000]
-                        ],
+                        itemCtx.wram[0x020244ac - 0x02000000 + 0],
                     );
 
                     // Phase 3: Poll until bag is open (scene === BATTLE_BAG_POCKET)
-                    const abPre = itemCtx.wram[0x02024064 - 0x02000000];
+                    const abPre = 0; // always use player battler 0 for menu reads
                     console.log(
                       "[item] starting poll, scene=" +
                         emeraldSceneDetector.detect(itemCtx.wram) +
@@ -792,7 +788,7 @@ const main = async () => {
                       });
                       const scene = emeraldSceneDetector.detect(itemCtx.wram);
                       if (poll < 3 || poll % 10 === 0) {
-                        const ab = itemCtx.wram[0x02024064 - 0x02000000];
+                        const ab = 0; // always use player battler 0 for menu reads
                         const comm = itemCtx.wram[0x02024332 - 0x02000000 + ab];
                         const chosen =
                           itemCtx.wram[0x0202421c - 0x02000000 + ab];
