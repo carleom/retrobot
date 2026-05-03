@@ -61,7 +61,7 @@ import {
 } from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector, emeraldSceneDetector } from "./scenes/emerald";
-import { executeMacro, MacroContext, Macro } from "./macros";
+import { executeMacro, MacroContext, Macro, MacroStep } from "./macros";
 import {
   selectMoveMacro,
   useItemMacro,
@@ -660,29 +660,65 @@ const main = async () => {
                     macro = selectMoveMacro(parseInt(parts[3]));
                     macroLabel = "Move " + (parseInt(parts[3]) + 1);
                   } else if (parts[2] === "item") {
-                    const itemPocket = parseInt(parts[3]);
+                    const itemPocket = parseInt(parts[3]); // target pocket (0=Items)
                     const itemId = parseInt(parts[4]);
+
+                    // Phase 1: Open the bag (batched)
+                    const openSteps: MacroStep[] = [
+                      ...useItemMacro(0).slice(0, 12), // resetToFight + RIGHT + A + idle(300)
+                    ];
                     const stateBytes = new Uint8Array(
                       fs.readFileSync(path.resolve("data", id, "state.sav")),
                     );
                     const gameBytes = new Uint8Array(
                       fs.readFileSync(path.resolve("data", id, info.game)),
                     );
-                    const { wram: itemWram } = await emulateParallel(
-                      pool,
-                      {
-                        coreType: info.coreType,
-                        game: gameBytes,
-                        state: stateBytes,
-                        frames: [],
-                        gameHash: undefined,
-                        stateHash: undefined,
-                      },
-                      { input: {}, duration: 1 },
+                    let bagCtx: MacroContext = {
+                      coreType: info.coreType,
+                      game: gameBytes,
+                      state: stateBytes,
+                      frames: [],
+                      wram: new Uint8Array(0),
+                      av_info: {},
+                    };
+                    // Open the bag via batched execution
+                    bagCtx = await executeMacro(pool, bagCtx, openSteps);
+
+                    // Phase 2: Read current pocket from RAM
+                    bagCtx = await emulateParallel(pool, bagCtx, {
+                      input: {},
+                      duration: 1,
+                    });
+                    const currPocket = bagCtx.wram[0x0203ce5d - 0x02000000]; // gBagPosition.pocket
+                    console.log(
+                      "[item] bag open, current pocket=" +
+                        currPocket +
+                        " target pocket=" +
+                        itemPocket,
                     );
-                    const items = readBagPocket(itemWram, itemPocket);
+
+                    // Phase 3: Navigate to the correct pocket (LEFT to go to previous pocket)
+                    const leftPresses = (currPocket - itemPocket + 5) % 5;
+                    const pocketSteps: MacroStep[] = [];
+                    for (let i = 0; i < leftPresses; i++) {
+                      pocketSteps.push({ input: { LEFT: true }, duration: 4 });
+                      pocketSteps.push({ input: {}, duration: 6 });
+                    }
+                    if (pocketSteps.length > 0) {
+                      bagCtx = await executeMacro(pool, bagCtx, pocketSteps);
+                      bagCtx = await emulateParallel(pool, bagCtx, {
+                        input: {},
+                        duration: 1,
+                      });
+                      console.log(
+                        "[item] after pocket nav, pocket=" +
+                          bagCtx.wram[0x0203ce5d - 0x02000000],
+                      );
+                    }
+
+                    // Phase 4: Read items, find display position, navigate DOWN
+                    const items = readBagPocket(bagCtx.wram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
-                    // Convert raw slot index to display position (bag compacts items)
                     let displayPos = 0;
                     if (found) {
                       const sorted = [...items].sort(
@@ -692,8 +728,69 @@ const main = async () => {
                         (it) => it.itemId === itemId,
                       );
                     }
-                    macro = useItemMacro(displayPos);
-                    macroLabel = itemName(itemId);
+                    console.log(
+                      "[item] itemId=" +
+                        itemId +
+                        " displayPos=" +
+                        displayPos +
+                        " itemCount=" +
+                        items.length,
+                    );
+
+                    const navSteps: MacroStep[] = [];
+                    for (let i = 0; i < displayPos; i++) {
+                      navSteps.push({ input: { DOWN: true }, duration: 4 });
+                      navSteps.push({ input: {}, duration: 4 });
+                    }
+                    // Select item and confirm
+                    navSteps.push({ input: { A: true }, duration: 4 });
+                    navSteps.push({ input: {}, duration: 8 });
+                    navSteps.push({ input: { A: true }, duration: 4 });
+                    navSteps.push({ input: {}, duration: 60 });
+                    navSteps.push({ input: {}, duration: 60 });
+
+                    if (navSteps.length > 0) {
+                      bagCtx = await executeMacro(pool, bagCtx, navSteps);
+                    }
+
+                    // Save state and run autoplay
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      bagCtx.state,
+                    );
+                    const {
+                      recording,
+                      recordingName,
+                      state: finalState,
+                      wram: finalWram,
+                    } = await emulate(
+                      pool,
+                      info.coreType,
+                      new Uint8Array(
+                        fs.readFileSync(path.resolve("data", id, info.game)),
+                      ),
+                      bagCtx.state,
+                      {
+                        ...info,
+                        inputAssist: InputAssist.Autoplay,
+                        inputAssistSpeed: InputAssistSpeed.Normal,
+                      },
+                      [],
+                    );
+                    fs.writeFileSync(
+                      path.resolve("data", id, "state.sav"),
+                      finalState,
+                    );
+                    const { rows: itemRows } = generateLayout(finalWram, id, 1);
+                    await message.channel.send({
+                      content:
+                        (player.nickname || player.displayName) +
+                        ": Used " +
+                        itemName(itemId),
+                      files: [{ attachment: recording, name: recordingName }],
+                      components: itemRows as any,
+                    });
+                    return;
                   } else if (parts[2] === "switch") {
                     // Check if we are in battle or overworld
                     const ctxBytes = new Uint8Array(
