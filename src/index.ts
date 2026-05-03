@@ -426,6 +426,7 @@ const main = async () => {
                 `**#${entry.id} ${entry.name}** — ${entry.types}`,
                 `**Evolves:** ${entry.evolution}`,
               ];
+              if (entry.locations) lines.push(entry.locations);
               if (showMoves) {
                 const moves = await getDexMoves(name);
                 lines.push("", moves);

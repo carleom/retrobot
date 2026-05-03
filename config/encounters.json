@@ -1,0 +1,2089 @@
+{
+  "ABRA": {
+    "Granite Cave 1F": [
+      "Grass"
+    ],
+    "Granite Cave B1F": [
+      "Grass"
+    ],
+    "Granite Cave B2F": [
+      "Grass"
+    ],
+    "Granite Cave Stevens Room": [
+      "Grass"
+    ],
+    "Route116": [
+      "Grass"
+    ]
+  },
+  "ABSOL": {
+    "Route120": [
+      "Grass"
+    ]
+  },
+  "AIPOM": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Northeast": [
+      "Grass"
+    ],
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "ALTARIA": {
+    "Sky Pillar 5F": [
+      "Grass"
+    ]
+  },
+  "ARON": {
+    "Granite Cave B1F": [
+      "Grass"
+    ],
+    "Granite Cave B2F": [
+      "Grass"
+    ],
+    "Granite Cave Stevens Room": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ]
+  },
+  "BAGON": {
+    "Meteor Falls B1F 2R": [
+      "Grass"
+    ]
+  },
+  "BALTOY": {
+    "Route111": [
+      "Grass"
+    ]
+  },
+  "BANETTE": {
+    "Sky Pillar 1F": [
+      "Grass"
+    ],
+    "Sky Pillar 3F": [
+      "Grass"
+    ],
+    "Sky Pillar 5F": [
+      "Grass"
+    ]
+  },
+  "BARBOACH": {
+    "Meteor Falls 1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls 1F 2R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Fish"
+    ],
+    "Route111": [
+      "Fish"
+    ],
+    "Route114": [
+      "Fish"
+    ],
+    "Route120": [
+      "Fish"
+    ],
+    "Victory Road B2F": [
+      "Fish"
+    ]
+  },
+  "CACNEA": {
+    "Route111": [
+      "Grass"
+    ]
+  },
+  "CARVANHA": {
+    "Route118": [
+      "Fish"
+    ],
+    "Route119": [
+      "Fish"
+    ]
+  },
+  "CASCOON": {
+    "Petalburg Woods": [
+      "Grass"
+    ]
+  },
+  "CHIMECHO": {
+    "Mt. Pyre Summit": [
+      "Grass"
+    ]
+  },
+  "CHINCHOU": {
+    "Underwater Route124": [
+      "Surf"
+    ],
+    "Underwater Route126": [
+      "Surf"
+    ]
+  },
+  "CLAMPERL": {
+    "Underwater Route124": [
+      "Surf"
+    ],
+    "Underwater Route126": [
+      "Surf"
+    ]
+  },
+  "CLAYDOL": {
+    "Sky Pillar 1F": [
+      "Grass"
+    ],
+    "Sky Pillar 3F": [
+      "Grass"
+    ],
+    "Sky Pillar 5F": [
+      "Grass"
+    ]
+  },
+  "CORPHISH": {
+    "Petalburg City": [
+      "Fish"
+    ],
+    "Route102": [
+      "Fish"
+    ],
+    "Route117": [
+      "Fish"
+    ]
+  },
+  "CORSOLA": {
+    "Ever Grande City": [
+      "Fish"
+    ],
+    "Route128": [
+      "Fish"
+    ]
+  },
+  "DITTO": {
+    "Desert Underpass": [
+      "Grass"
+    ]
+  },
+  "DODRIO": {
+    "Safari Zone Northwest": [
+      "Grass"
+    ]
+  },
+  "DODUO": {
+    "Safari Zone Northwest": [
+      "Grass"
+    ],
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "DUSKULL": {
+    "Mt. Pyre 4F": [
+      "Grass"
+    ],
+    "Mt. Pyre 5F": [
+      "Grass"
+    ],
+    "Mt. Pyre 6F": [
+      "Grass"
+    ],
+    "Mt. Pyre Summit": [
+      "Grass"
+    ]
+  },
+  "ELECTRIKE": {
+    "Route110": [
+      "Grass"
+    ],
+    "Route118": [
+      "Grass"
+    ]
+  },
+  "ELECTRODE": {
+    "New Mauville Inside": [
+      "Grass"
+    ]
+  },
+  "GEODUDE": {
+    "Granite Cave 1F": [
+      "Grass"
+    ],
+    "Granite Cave B2F": [
+      "Rock Smash"
+    ],
+    "Magma Hideout 1F": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 4F": [
+      "Grass"
+    ],
+    "Route111": [
+      "Rock Smash"
+    ],
+    "Route114": [
+      "Rock Smash"
+    ],
+    "Safari Zone North": [
+      "Rock Smash"
+    ],
+    "Victory Road B1F": [
+      "Rock Smash"
+    ]
+  },
+  "GIRAFARIG": {
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "GLIGAR": {
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "GLOOM": {
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ],
+    "Safari Zone North": [
+      "Grass"
+    ],
+    "Safari Zone Northwest": [
+      "Grass"
+    ],
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "GOLBAT": {
+    "Cave Of Origin 1F": [
+      "Grass"
+    ],
+    "Cave Of Origin Entrance": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map1": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map2": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map3": [
+      "Grass"
+    ],
+    "Meteor Falls 1F 2R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls Stevens Cave": [
+      "Grass"
+    ],
+    "Seafloor Cavern Entrance": [
+      "Surf"
+    ],
+    "Seafloor Cavern Room1": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room2": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room3": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room4": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room5": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room6": [
+      "Grass",
+      "Surf"
+    ],
+    "Seafloor Cavern Room7": [
+      "Grass",
+      "Surf"
+    ],
+    "Seafloor Cavern Room8": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Entrance Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Ice Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Lower Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Stairs Room": [
+      "Grass"
+    ],
+    "Sky Pillar 1F": [
+      "Grass"
+    ],
+    "Sky Pillar 3F": [
+      "Grass"
+    ],
+    "Sky Pillar 5F": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ],
+    "Victory Road B1F": [
+      "Grass"
+    ],
+    "Victory Road B2F": [
+      "Grass",
+      "Surf"
+    ]
+  },
+  "GOLDEEN": {
+    "Meteor Falls 1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls 1F 2R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Fish"
+    ],
+    "Petalburg City": [
+      "Fish"
+    ],
+    "Route102": [
+      "Fish",
+      "Surf"
+    ],
+    "Route111": [
+      "Fish",
+      "Surf"
+    ],
+    "Route114": [
+      "Fish",
+      "Surf"
+    ],
+    "Route117": [
+      "Fish",
+      "Surf"
+    ],
+    "Route120": [
+      "Fish",
+      "Surf"
+    ],
+    "Safari Zone Northwest": [
+      "Fish"
+    ],
+    "Safari Zone Southeast": [
+      "Fish"
+    ],
+    "Safari Zone Southwest": [
+      "Fish"
+    ],
+    "Victory Road B2F": [
+      "Fish"
+    ]
+  },
+  "GOLDUCK": {
+    "Safari Zone Northwest": [
+      "Surf"
+    ]
+  },
+  "GRAVELER": {
+    "Magma Hideout 1F": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 4F": [
+      "Grass"
+    ],
+    "Victory Road B1F": [
+      "Rock Smash"
+    ]
+  },
+  "GRIMER": {
+    "Fiery Path": [
+      "Grass"
+    ]
+  },
+  "GULPIN": {
+    "Route110": [
+      "Grass"
+    ]
+  },
+  "GYARADOS": {
+    "Sootopolis City": [
+      "Fish"
+    ]
+  },
+  "HARIYAMA": {
+    "Victory Road 1F": [
+      "Grass"
+    ],
+    "Victory Road B1F": [
+      "Grass"
+    ]
+  },
+  "HERACROSS": {
+    "Safari Zone North": [
+      "Grass"
+    ]
+  },
+  "HOOTHOOT": {
+    "Safari Zone Northeast": [
+      "Grass"
+    ],
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "HORSEA": {
+    "Route132": [
+      "Fish"
+    ],
+    "Route133": [
+      "Fish"
+    ],
+    "Route134": [
+      "Fish"
+    ]
+  },
+  "HOUNDOUR": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Northeast": [
+      "Grass"
+    ]
+  },
+  "ILLUMISE": {
+    "Route117": [
+      "Grass"
+    ]
+  },
+  "JIGGLYPUFF": {
+    "Route115": [
+      "Grass"
+    ]
+  },
+  "KECLEON": {
+    "Route118": [
+      "Grass"
+    ],
+    "Route119": [
+      "Grass"
+    ],
+    "Route120": [
+      "Grass"
+    ],
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ]
+  },
+  "KOFFING": {
+    "Fiery Path": [
+      "Grass"
+    ]
+  },
+  "LAIRON": {
+    "Victory Road 1F": [
+      "Grass"
+    ],
+    "Victory Road B1F": [
+      "Grass"
+    ],
+    "Victory Road B2F": [
+      "Grass"
+    ]
+  },
+  "LEDYBA": {
+    "Safari Zone Northeast": [
+      "Grass"
+    ]
+  },
+  "LINOONE": {
+    "Route118": [
+      "Grass"
+    ],
+    "Route119": [
+      "Grass"
+    ]
+  },
+  "LOMBRE": {
+    "Route114": [
+      "Grass"
+    ]
+  },
+  "LOTAD": {
+    "Route102": [
+      "Grass"
+    ],
+    "Route114": [
+      "Grass"
+    ]
+  },
+  "LOUDRED": {
+    "Desert Underpass": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ]
+  },
+  "LUVDISC": {
+    "Ever Grande City": [
+      "Fish"
+    ],
+    "Route128": [
+      "Fish"
+    ]
+  },
+  "MACHOP": {
+    "Fiery Path": [
+      "Grass"
+    ],
+    "Jagged Pass": [
+      "Grass"
+    ]
+  },
+  "MAGIKARP": {
+    "Abandoned Ship Hidden Floor Corridors": [
+      "Fish"
+    ],
+    "Abandoned Ship Rooms B1F": [
+      "Fish"
+    ],
+    "Dewford Town": [
+      "Fish"
+    ],
+    "Ever Grande City": [
+      "Fish"
+    ],
+    "Lilycove City": [
+      "Fish"
+    ],
+    "Meteor Falls 1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls 1F 2R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Fish"
+    ],
+    "Mossdeep City": [
+      "Fish"
+    ],
+    "Pacifidlog Town": [
+      "Fish"
+    ],
+    "Petalburg City": [
+      "Fish"
+    ],
+    "Route102": [
+      "Fish"
+    ],
+    "Route103": [
+      "Fish"
+    ],
+    "Route104": [
+      "Fish"
+    ],
+    "Route105": [
+      "Fish"
+    ],
+    "Route106": [
+      "Fish"
+    ],
+    "Route107": [
+      "Fish"
+    ],
+    "Route108": [
+      "Fish"
+    ],
+    "Route109": [
+      "Fish"
+    ],
+    "Route110": [
+      "Fish"
+    ],
+    "Route111": [
+      "Fish"
+    ],
+    "Route114": [
+      "Fish"
+    ],
+    "Route115": [
+      "Fish"
+    ],
+    "Route117": [
+      "Fish"
+    ],
+    "Route118": [
+      "Fish"
+    ],
+    "Route119": [
+      "Fish"
+    ],
+    "Route120": [
+      "Fish"
+    ],
+    "Route121": [
+      "Fish"
+    ],
+    "Route122": [
+      "Fish"
+    ],
+    "Route123": [
+      "Fish"
+    ],
+    "Route124": [
+      "Fish"
+    ],
+    "Route125": [
+      "Fish"
+    ],
+    "Route126": [
+      "Fish"
+    ],
+    "Route127": [
+      "Fish"
+    ],
+    "Route128": [
+      "Fish"
+    ],
+    "Route129": [
+      "Fish"
+    ],
+    "Route130": [
+      "Fish"
+    ],
+    "Route131": [
+      "Fish"
+    ],
+    "Route132": [
+      "Fish"
+    ],
+    "Route133": [
+      "Fish"
+    ],
+    "Route134": [
+      "Fish"
+    ],
+    "Safari Zone Northwest": [
+      "Fish"
+    ],
+    "Safari Zone Southeast": [
+      "Fish"
+    ],
+    "Safari Zone Southwest": [
+      "Fish"
+    ],
+    "Seafloor Cavern Entrance": [
+      "Fish"
+    ],
+    "Seafloor Cavern Room6": [
+      "Fish"
+    ],
+    "Seafloor Cavern Room7": [
+      "Fish"
+    ],
+    "Shoal Cave Low Tide Entrance Room": [
+      "Fish"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Fish"
+    ],
+    "Slateport City": [
+      "Fish"
+    ],
+    "Sootopolis City": [
+      "Fish",
+      "Surf"
+    ],
+    "Victory Road B2F": [
+      "Fish"
+    ]
+  },
+  "MAGNEMITE": {
+    "New Mauville Entrance": [
+      "Grass"
+    ],
+    "New Mauville Inside": [
+      "Grass"
+    ]
+  },
+  "MAGNETON": {
+    "New Mauville Inside": [
+      "Grass"
+    ]
+  },
+  "MAKUHITA": {
+    "Granite Cave 1F": [
+      "Grass"
+    ],
+    "Granite Cave B1F": [
+      "Grass"
+    ],
+    "Granite Cave Stevens Room": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ]
+  },
+  "MANECTRIC": {
+    "Route118": [
+      "Grass"
+    ]
+  },
+  "MAREEP": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "MARILL": {
+    "Petalburg City": [
+      "Surf"
+    ],
+    "Route102": [
+      "Surf"
+    ],
+    "Route104": [
+      "Grass"
+    ],
+    "Route111": [
+      "Surf"
+    ],
+    "Route112": [
+      "Grass"
+    ],
+    "Route114": [
+      "Surf"
+    ],
+    "Route117": [
+      "Grass",
+      "Surf"
+    ],
+    "Route120": [
+      "Grass",
+      "Surf"
+    ],
+    "Safari Zone Southeast": [
+      "Surf"
+    ]
+  },
+  "MAWILE": {
+    "Victory Road B1F": [
+      "Grass"
+    ],
+    "Victory Road B2F": [
+      "Grass"
+    ]
+  },
+  "MIGHTYENA": {
+    "Route120": [
+      "Grass"
+    ],
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ]
+  },
+  "MILTANK": {
+    "Safari Zone Northeast": [
+      "Grass"
+    ]
+  },
+  "MINUN": {
+    "Route110": [
+      "Grass"
+    ]
+  },
+  "NATU": {
+    "Safari Zone North": [
+      "Grass"
+    ],
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "NINCADA": {
+    "Route116": [
+      "Grass"
+    ]
+  },
+  "NOSEPASS": {
+    "Granite Cave B2F": [
+      "Rock Smash"
+    ]
+  },
+  "NUMEL": {
+    "Fiery Path": [
+      "Grass"
+    ],
+    "Jagged Pass": [
+      "Grass"
+    ],
+    "Route112": [
+      "Grass"
+    ]
+  },
+  "NUZLEAF": {
+    "Route114": [
+      "Grass"
+    ]
+  },
+  "OCTILLERY": {
+    "Safari Zone Southeast": [
+      "Fish"
+    ]
+  },
+  "ODDISH": {
+    "Route110": [
+      "Grass"
+    ],
+    "Route117": [
+      "Grass"
+    ],
+    "Route119": [
+      "Grass"
+    ],
+    "Route120": [
+      "Grass"
+    ],
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ],
+    "Safari Zone North": [
+      "Grass"
+    ],
+    "Safari Zone Northwest": [
+      "Grass"
+    ],
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "PELIPPER": {
+    "Dewford Town": [
+      "Surf"
+    ],
+    "Ever Grande City": [
+      "Surf"
+    ],
+    "Lilycove City": [
+      "Surf"
+    ],
+    "Mossdeep City": [
+      "Surf"
+    ],
+    "Pacifidlog Town": [
+      "Surf"
+    ],
+    "Route103": [
+      "Surf"
+    ],
+    "Route104": [
+      "Surf"
+    ],
+    "Route105": [
+      "Surf"
+    ],
+    "Route106": [
+      "Surf"
+    ],
+    "Route107": [
+      "Surf"
+    ],
+    "Route108": [
+      "Surf"
+    ],
+    "Route109": [
+      "Surf"
+    ],
+    "Route110": [
+      "Surf"
+    ],
+    "Route115": [
+      "Surf"
+    ],
+    "Route118": [
+      "Surf"
+    ],
+    "Route119": [
+      "Surf"
+    ],
+    "Route121": [
+      "Surf"
+    ],
+    "Route122": [
+      "Surf"
+    ],
+    "Route123": [
+      "Surf"
+    ],
+    "Route124": [
+      "Surf"
+    ],
+    "Route125": [
+      "Surf"
+    ],
+    "Route126": [
+      "Surf"
+    ],
+    "Route127": [
+      "Surf"
+    ],
+    "Route128": [
+      "Surf"
+    ],
+    "Route129": [
+      "Surf"
+    ],
+    "Route130": [
+      "Surf"
+    ],
+    "Route131": [
+      "Surf"
+    ],
+    "Route132": [
+      "Surf"
+    ],
+    "Route133": [
+      "Surf"
+    ],
+    "Route134": [
+      "Surf"
+    ],
+    "Slateport City": [
+      "Surf"
+    ]
+  },
+  "PHANPY": {
+    "Safari Zone North": [
+      "Grass"
+    ]
+  },
+  "PIKACHU": {
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "PINECO": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Northeast": [
+      "Grass"
+    ]
+  },
+  "PINSIR": {
+    "Safari Zone Northwest": [
+      "Grass"
+    ]
+  },
+  "PLUSLE": {
+    "Route110": [
+      "Grass"
+    ]
+  },
+  "POOCHYENA": {
+    "Petalburg Woods": [
+      "Grass"
+    ],
+    "Route101": [
+      "Grass"
+    ],
+    "Route102": [
+      "Grass"
+    ],
+    "Route103": [
+      "Grass"
+    ],
+    "Route104": [
+      "Grass"
+    ],
+    "Route110": [
+      "Grass"
+    ],
+    "Route116": [
+      "Grass"
+    ],
+    "Route117": [
+      "Grass"
+    ],
+    "Route120": [
+      "Grass"
+    ],
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ]
+  },
+  "PSYDUCK": {
+    "Safari Zone Northwest": [
+      "Surf"
+    ],
+    "Safari Zone Southwest": [
+      "Surf"
+    ]
+  },
+  "QUAGSIRE": {
+    "Safari Zone Southeast": [
+      "Surf"
+    ]
+  },
+  "RALTS": {
+    "Route102": [
+      "Grass"
+    ]
+  },
+  "RELICANTH": {
+    "Underwater Route124": [
+      "Surf"
+    ],
+    "Underwater Route126": [
+      "Surf"
+    ]
+  },
+  "REMORAID": {
+    "Safari Zone Southeast": [
+      "Fish"
+    ]
+  },
+  "RHYHORN": {
+    "Safari Zone Northwest": [
+      "Grass"
+    ]
+  },
+  "SABLEYE": {
+    "Cave Of Origin 1F": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map1": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map2": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map3": [
+      "Grass"
+    ],
+    "Granite Cave B1F": [
+      "Grass"
+    ],
+    "Granite Cave B2F": [
+      "Grass"
+    ],
+    "Sky Pillar 1F": [
+      "Grass"
+    ],
+    "Sky Pillar 3F": [
+      "Grass"
+    ],
+    "Sky Pillar 5F": [
+      "Grass"
+    ],
+    "Victory Road B2F": [
+      "Grass"
+    ]
+  },
+  "SANDSHREW": {
+    "Mirage Tower 1F": [
+      "Grass"
+    ],
+    "Mirage Tower 2F": [
+      "Grass"
+    ],
+    "Mirage Tower 3F": [
+      "Grass"
+    ],
+    "Mirage Tower 4F": [
+      "Grass"
+    ],
+    "Route111": [
+      "Grass"
+    ]
+  },
+  "SEAKING": {
+    "Safari Zone Northwest": [
+      "Fish"
+    ],
+    "Safari Zone Southwest": [
+      "Fish"
+    ]
+  },
+  "SEEDOT": {
+    "Route102": [
+      "Grass"
+    ],
+    "Route117": [
+      "Grass"
+    ],
+    "Route120": [
+      "Grass"
+    ]
+  },
+  "SEVIPER": {
+    "Route114": [
+      "Grass"
+    ]
+  },
+  "SHARPEDO": {
+    "Mossdeep City": [
+      "Fish"
+    ],
+    "Pacifidlog Town": [
+      "Fish"
+    ],
+    "Route103": [
+      "Fish"
+    ],
+    "Route118": [
+      "Fish"
+    ],
+    "Route122": [
+      "Fish"
+    ],
+    "Route124": [
+      "Fish"
+    ],
+    "Route125": [
+      "Fish"
+    ],
+    "Route126": [
+      "Fish"
+    ],
+    "Route127": [
+      "Fish"
+    ],
+    "Route129": [
+      "Fish"
+    ],
+    "Route130": [
+      "Fish"
+    ],
+    "Route131": [
+      "Fish"
+    ],
+    "Route132": [
+      "Fish"
+    ],
+    "Route133": [
+      "Fish"
+    ],
+    "Route134": [
+      "Fish"
+    ]
+  },
+  "SHROOMISH": {
+    "Petalburg Woods": [
+      "Grass"
+    ]
+  },
+  "SHUCKLE": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Northeast": [
+      "Rock Smash"
+    ]
+  },
+  "SHUPPET": {
+    "Mt. Pyre 1F": [
+      "Grass"
+    ],
+    "Mt. Pyre 2F": [
+      "Grass"
+    ],
+    "Mt. Pyre 3F": [
+      "Grass"
+    ],
+    "Mt. Pyre 4F": [
+      "Grass"
+    ],
+    "Mt. Pyre 5F": [
+      "Grass"
+    ],
+    "Mt. Pyre 6F": [
+      "Grass"
+    ],
+    "Mt. Pyre Exterior": [
+      "Grass"
+    ],
+    "Mt. Pyre Summit": [
+      "Grass"
+    ],
+    "Route121": [
+      "Grass"
+    ],
+    "Route123": [
+      "Grass"
+    ]
+  },
+  "SILCOON": {
+    "Petalburg Woods": [
+      "Grass"
+    ]
+  },
+  "SKARMORY": {
+    "Route113": [
+      "Grass"
+    ]
+  },
+  "SKITTY": {
+    "Route116": [
+      "Grass"
+    ]
+  },
+  "SLAKOTH": {
+    "Petalburg Woods": [
+      "Grass"
+    ]
+  },
+  "SLUGMA": {
+    "Fiery Path": [
+      "Grass"
+    ],
+    "Route113": [
+      "Grass"
+    ]
+  },
+  "SMEARGLE": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Artisan Cave 1F": [
+      "Grass"
+    ],
+    "Artisan Cave B1F": [
+      "Grass"
+    ]
+  },
+  "SNORUNT": {
+    "Shoal Cave Low Tide Ice Room": [
+      "Grass"
+    ]
+  },
+  "SNUBBULL": {
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "SOLROCK": {
+    "Meteor Falls 1F 1R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls 1F 2R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Grass",
+      "Surf"
+    ],
+    "Meteor Falls Stevens Cave": [
+      "Grass"
+    ]
+  },
+  "SPHEAL": {
+    "Shoal Cave Low Tide Entrance Room": [
+      "Grass",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Ice Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Grass",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Lower Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Stairs Room": [
+      "Grass"
+    ]
+  },
+  "SPINARAK": {
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "SPINDA": {
+    "Route113": [
+      "Grass"
+    ]
+  },
+  "SPOINK": {
+    "Jagged Pass": [
+      "Grass"
+    ]
+  },
+  "STANTLER": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "STARYU": {
+    "Lilycove City": [
+      "Fish"
+    ]
+  },
+  "SUNKERN": {
+    "Safari Zone Northeast": [
+      "Grass"
+    ],
+    "Safari Zone Southeast": [
+      "Grass"
+    ]
+  },
+  "SWABLU": {
+    "Route114": [
+      "Grass"
+    ],
+    "Route115": [
+      "Grass"
+    ]
+  },
+  "SWELLOW": {
+    "Route115": [
+      "Grass"
+    ]
+  },
+  "TAILLOW": {
+    "Petalburg Woods": [
+      "Grass"
+    ],
+    "Route104": [
+      "Grass"
+    ],
+    "Route115": [
+      "Grass"
+    ],
+    "Route116": [
+      "Grass"
+    ]
+  },
+  "TEDDIURSA": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Safari Zone Northeast": [
+      "Grass"
+    ]
+  },
+  "TENTACOOL": {
+    "Abandoned Ship Hidden Floor Corridors": [
+      "Fish",
+      "Surf"
+    ],
+    "Abandoned Ship Rooms B1F": [
+      "Fish",
+      "Surf"
+    ],
+    "Dewford Town": [
+      "Fish",
+      "Surf"
+    ],
+    "Ever Grande City": [
+      "Fish",
+      "Surf"
+    ],
+    "Lilycove City": [
+      "Fish",
+      "Surf"
+    ],
+    "Mossdeep City": [
+      "Fish",
+      "Surf"
+    ],
+    "Pacifidlog Town": [
+      "Fish",
+      "Surf"
+    ],
+    "Route103": [
+      "Fish",
+      "Surf"
+    ],
+    "Route105": [
+      "Fish",
+      "Surf"
+    ],
+    "Route106": [
+      "Fish",
+      "Surf"
+    ],
+    "Route107": [
+      "Fish",
+      "Surf"
+    ],
+    "Route108": [
+      "Fish",
+      "Surf"
+    ],
+    "Route109": [
+      "Fish",
+      "Surf"
+    ],
+    "Route110": [
+      "Fish",
+      "Surf"
+    ],
+    "Route115": [
+      "Fish",
+      "Surf"
+    ],
+    "Route118": [
+      "Fish",
+      "Surf"
+    ],
+    "Route119": [
+      "Fish",
+      "Surf"
+    ],
+    "Route121": [
+      "Fish",
+      "Surf"
+    ],
+    "Route122": [
+      "Fish",
+      "Surf"
+    ],
+    "Route123": [
+      "Fish",
+      "Surf"
+    ],
+    "Route124": [
+      "Fish",
+      "Surf"
+    ],
+    "Route125": [
+      "Fish",
+      "Surf"
+    ],
+    "Route126": [
+      "Fish",
+      "Surf"
+    ],
+    "Route127": [
+      "Fish",
+      "Surf"
+    ],
+    "Route128": [
+      "Fish",
+      "Surf"
+    ],
+    "Route129": [
+      "Fish",
+      "Surf"
+    ],
+    "Route130": [
+      "Fish",
+      "Surf"
+    ],
+    "Route131": [
+      "Fish",
+      "Surf"
+    ],
+    "Route132": [
+      "Fish",
+      "Surf"
+    ],
+    "Route133": [
+      "Fish",
+      "Surf"
+    ],
+    "Route134": [
+      "Fish",
+      "Surf"
+    ],
+    "Seafloor Cavern Entrance": [
+      "Fish",
+      "Surf"
+    ],
+    "Seafloor Cavern Room6": [
+      "Fish",
+      "Surf"
+    ],
+    "Seafloor Cavern Room7": [
+      "Fish",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Entrance Room": [
+      "Fish",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Fish",
+      "Surf"
+    ],
+    "Slateport City": [
+      "Fish",
+      "Surf"
+    ],
+    "Sootopolis City": [
+      "Fish"
+    ]
+  },
+  "TENTACRUEL": {
+    "Abandoned Ship Hidden Floor Corridors": [
+      "Fish",
+      "Surf"
+    ],
+    "Abandoned Ship Rooms B1F": [
+      "Fish",
+      "Surf"
+    ]
+  },
+  "TORKOAL": {
+    "Fiery Path": [
+      "Grass"
+    ],
+    "Magma Hideout 1F": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 2F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 1R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 2R": [
+      "Grass"
+    ],
+    "Magma Hideout 3F 3R": [
+      "Grass"
+    ],
+    "Magma Hideout 4F": [
+      "Grass"
+    ]
+  },
+  "TRAPINCH": {
+    "Mirage Tower 1F": [
+      "Grass"
+    ],
+    "Mirage Tower 2F": [
+      "Grass"
+    ],
+    "Mirage Tower 3F": [
+      "Grass"
+    ],
+    "Mirage Tower 4F": [
+      "Grass"
+    ],
+    "Route111": [
+      "Grass"
+    ]
+  },
+  "TROPIUS": {
+    "Route119": [
+      "Grass"
+    ]
+  },
+  "VOLBEAT": {
+    "Route117": [
+      "Grass"
+    ]
+  },
+  "VOLTORB": {
+    "New Mauville Entrance": [
+      "Grass"
+    ],
+    "New Mauville Inside": [
+      "Grass"
+    ]
+  },
+  "VULPIX": {
+    "Mt. Pyre Exterior": [
+      "Grass"
+    ]
+  },
+  "WAILMER": {
+    "Dewford Town": [
+      "Fish"
+    ],
+    "Ever Grande City": [
+      "Fish"
+    ],
+    "Lilycove City": [
+      "Fish"
+    ],
+    "Mossdeep City": [
+      "Fish"
+    ],
+    "Pacifidlog Town": [
+      "Fish"
+    ],
+    "Route103": [
+      "Fish"
+    ],
+    "Route105": [
+      "Fish"
+    ],
+    "Route106": [
+      "Fish"
+    ],
+    "Route107": [
+      "Fish"
+    ],
+    "Route108": [
+      "Fish"
+    ],
+    "Route109": [
+      "Fish"
+    ],
+    "Route110": [
+      "Fish"
+    ],
+    "Route115": [
+      "Fish"
+    ],
+    "Route121": [
+      "Fish"
+    ],
+    "Route122": [
+      "Fish"
+    ],
+    "Route123": [
+      "Fish"
+    ],
+    "Route124": [
+      "Fish"
+    ],
+    "Route125": [
+      "Fish"
+    ],
+    "Route126": [
+      "Fish"
+    ],
+    "Route127": [
+      "Fish"
+    ],
+    "Route128": [
+      "Fish"
+    ],
+    "Route129": [
+      "Fish"
+    ],
+    "Route130": [
+      "Fish"
+    ],
+    "Route131": [
+      "Fish"
+    ],
+    "Route132": [
+      "Fish"
+    ],
+    "Route133": [
+      "Fish"
+    ],
+    "Route134": [
+      "Fish"
+    ],
+    "Seafloor Cavern Entrance": [
+      "Fish"
+    ],
+    "Seafloor Cavern Room6": [
+      "Fish"
+    ],
+    "Seafloor Cavern Room7": [
+      "Fish"
+    ],
+    "Shoal Cave Low Tide Entrance Room": [
+      "Fish"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Fish"
+    ],
+    "Slateport City": [
+      "Fish"
+    ]
+  },
+  "WAILORD": {
+    "Route129": [
+      "Surf"
+    ]
+  },
+  "WHISCASH": {
+    "Meteor Falls 1F 2R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 1R": [
+      "Fish"
+    ],
+    "Meteor Falls B1F 2R": [
+      "Fish"
+    ],
+    "Victory Road B2F": [
+      "Fish"
+    ]
+  },
+  "WHISMUR": {
+    "Desert Underpass": [
+      "Grass"
+    ],
+    "Route116": [
+      "Grass"
+    ],
+    "Rusturf Tunnel": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ]
+  },
+  "WINGULL": {
+    "Dewford Town": [
+      "Surf"
+    ],
+    "Ever Grande City": [
+      "Surf"
+    ],
+    "Lilycove City": [
+      "Surf"
+    ],
+    "Mossdeep City": [
+      "Surf"
+    ],
+    "Mt. Pyre Exterior": [
+      "Grass"
+    ],
+    "Pacifidlog Town": [
+      "Surf"
+    ],
+    "Route103": [
+      "Grass",
+      "Surf"
+    ],
+    "Route104": [
+      "Grass",
+      "Surf"
+    ],
+    "Route105": [
+      "Surf"
+    ],
+    "Route106": [
+      "Surf"
+    ],
+    "Route107": [
+      "Surf"
+    ],
+    "Route108": [
+      "Surf"
+    ],
+    "Route109": [
+      "Surf"
+    ],
+    "Route110": [
+      "Grass",
+      "Surf"
+    ],
+    "Route115": [
+      "Grass",
+      "Surf"
+    ],
+    "Route118": [
+      "Grass",
+      "Surf"
+    ],
+    "Route119": [
+      "Surf"
+    ],
+    "Route121": [
+      "Grass",
+      "Surf"
+    ],
+    "Route122": [
+      "Surf"
+    ],
+    "Route123": [
+      "Grass",
+      "Surf"
+    ],
+    "Route124": [
+      "Surf"
+    ],
+    "Route125": [
+      "Surf"
+    ],
+    "Route126": [
+      "Surf"
+    ],
+    "Route127": [
+      "Surf"
+    ],
+    "Route128": [
+      "Surf"
+    ],
+    "Route129": [
+      "Surf"
+    ],
+    "Route130": [
+      "Surf"
+    ],
+    "Route131": [
+      "Surf"
+    ],
+    "Route132": [
+      "Surf"
+    ],
+    "Route133": [
+      "Surf"
+    ],
+    "Route134": [
+      "Surf"
+    ],
+    "Slateport City": [
+      "Surf"
+    ]
+  },
+  "WOBBUFFET": {
+    "Safari Zone South": [
+      "Grass"
+    ],
+    "Safari Zone Southwest": [
+      "Grass"
+    ]
+  },
+  "WOOPER": {
+    "Safari Zone Southeast": [
+      "Surf"
+    ]
+  },
+  "WURMPLE": {
+    "Petalburg Woods": [
+      "Grass"
+    ],
+    "Route101": [
+      "Grass"
+    ],
+    "Route102": [
+      "Grass"
+    ],
+    "Route104": [
+      "Grass"
+    ]
+  },
+  "WYNAUT": {
+    "Route130": [
+      "Grass"
+    ]
+  },
+  "XATU": {
+    "Safari Zone North": [
+      "Grass"
+    ]
+  },
+  "ZIGZAGOON": {
+    "Route101": [
+      "Grass"
+    ],
+    "Route102": [
+      "Grass"
+    ],
+    "Route103": [
+      "Grass"
+    ],
+    "Route118": [
+      "Grass"
+    ],
+    "Route119": [
+      "Grass"
+    ]
+  },
+  "ZUBAT": {
+    "Altering Cave": [
+      "Grass"
+    ],
+    "Cave Of Origin 1F": [
+      "Grass"
+    ],
+    "Cave Of Origin Entrance": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map1": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map2": [
+      "Grass"
+    ],
+    "Cave Of Origin Unused Ruby Sapphire Map3": [
+      "Grass"
+    ],
+    "Granite Cave 1F": [
+      "Grass"
+    ],
+    "Granite Cave B1F": [
+      "Grass"
+    ],
+    "Granite Cave B2F": [
+      "Grass"
+    ],
+    "Granite Cave Stevens Room": [
+      "Grass"
+    ],
+    "Meteor Falls 1F 1R": [
+      "Grass",
+      "Surf"
+    ],
+    "Seafloor Cavern Entrance": [
+      "Surf"
+    ],
+    "Seafloor Cavern Room1": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room2": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room3": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room4": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room5": [
+      "Grass"
+    ],
+    "Seafloor Cavern Room6": [
+      "Grass",
+      "Surf"
+    ],
+    "Seafloor Cavern Room7": [
+      "Grass",
+      "Surf"
+    ],
+    "Seafloor Cavern Room8": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Entrance Room": [
+      "Grass",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Ice Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Inner Room": [
+      "Grass",
+      "Surf"
+    ],
+    "Shoal Cave Low Tide Lower Room": [
+      "Grass"
+    ],
+    "Shoal Cave Low Tide Stairs Room": [
+      "Grass"
+    ],
+    "Victory Road 1F": [
+      "Grass"
+    ]
+  }
+}
