@@ -126,8 +126,8 @@ export function useItemMacro(slotIndex: number = 0): Macro {
     ...resetToFight(),
     { ...RIGHT },
     { ...idle(12) },
-    { input: { A: true }, duration: 6 },
-    { ...idle(180) }, // Wait for bag to animate open
+    { input: { A: true }, duration: 4 },
+    { ...idle(300) },
   ];
 
   for (let i = 0; i < slotIndex; i++) {
@@ -218,11 +218,12 @@ export function openBagMacro(): Macro {
     ...resetToFight(),
     { ...RIGHT },
     { ...idle(12) },
-    { input: { A: true }, duration: 6 },
-    { ...idle(180) },
+    { input: { A: true }, duration: 4 },
+    { ...idle(300) },
   ];
 }
 
+// ── Overworld Switch Macro
 export function backMacro(): Macro {
   return [{ ...B }, { ...idle(12) }];
 }
