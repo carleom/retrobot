@@ -682,7 +682,17 @@ const main = async () => {
                     );
                     const items = readBagPocket(itemWram, itemPocket);
                     const found = items.find((it: any) => it.itemId === itemId);
-                    macro = useItemMacro(found ? found.slotIndex : 0);
+                    // Convert raw slot index to display position (bag compacts items)
+                    let displayPos = 0;
+                    if (found) {
+                      const sorted = [...items].sort(
+                        (a, b) => a.slotIndex - b.slotIndex,
+                      );
+                      displayPos = sorted.findIndex(
+                        (it) => it.itemId === itemId,
+                      );
+                    }
+                    macro = useItemMacro(displayPos);
                     macroLabel = itemName(itemId);
                   } else if (parts[2] === "switch") {
                     // Check if we are in battle or overworld

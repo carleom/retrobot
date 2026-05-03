@@ -118,14 +118,29 @@ export function cancelTargetMacro(): Macro {
 // ── Use Item Macro ───────────────────────────────────────────────────────────
 
 export function useItemMacro(slotIndex: number = 0): Macro {
+  if (slotIndex < 0) {
+    throw new Error(`Invalid item slot index: ${slotIndex}. Must be >= 0.`);
+  }
+
   const steps: MacroStep[] = [
     ...resetToFight(),
     { ...RIGHT },
     { ...idle(12) },
     { ...A },
     { ...idle(300) },
-    // TEST: stop here, no navigation
   ];
+
+  for (let i = 0; i < slotIndex; i++) {
+    steps.push({ ...DOWN }, { ...idle(4) });
+  }
+
+  steps.push(
+    { ...A, updateButtons: true },
+    { ...idle(4) },
+    { ...A },
+    { ...idle(60) },
+    { ...idle(60) },
+  );
   return steps;
 }
 
