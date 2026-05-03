@@ -1,8 +1,8 @@
-FROM alpine:3.16.2
+FROM node:18-alpine
 
 WORKDIR /retrobot
 
-RUN apk add --no-cache nodejs npm git python3 xz-dev make g++
+RUN apk add --no-cache git python3 xz-dev make g++
 RUN npm install --global yarn cross-env forever
 
 COPY . .

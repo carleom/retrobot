@@ -419,7 +419,8 @@ const main = async () => {
             await interaction.deferReply();
             const name = interaction.options.get("pokemon", true)
               .value as string;
-            const showMoves = (interaction.options.get("moves")?.value as boolean) ?? false;
+            const showMoves =
+              (interaction.options.get("moves")?.value as boolean) ?? false;
             try {
               const entry = await getDexEntry(name);
               const lines = [
