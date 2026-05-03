@@ -32,7 +32,12 @@ const lookups: Lookups = JSON.parse(fs.readFileSync(lookupsPath, "utf-8"));
 // Load custom emoji IDs (set by /upload_emojis command)
 function getEmojiIds(): Record<string, string> {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "config", "emoji_ids.json"), "utf-8"));
+    return JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "..", "config", "emoji_ids.json"),
+        "utf-8",
+      ),
+    );
   } catch (_) {
     return {};
   }
@@ -361,8 +366,8 @@ export function buildOverworld(
       btn(`${gameId}-right-${m}`, "", ButtonStyle.Secondary, false, "➡️"),
     ),
     row(
-      btn(`${gameId}-a-${m}`, "", ButtonStyle.Success, false, "🅰️"),
-      btn(`${gameId}-b-${m}`, "", ButtonStyle.Danger, false, "🅱️"),
+      btn(`${gameId}-a-${m}`, "A", ButtonStyle.Success, false),
+      btn(`${gameId}-b-${m}`, "B", ButtonStyle.Danger, false),
       btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
     ),
     row(btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary)),
