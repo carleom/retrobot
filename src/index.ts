@@ -957,12 +957,24 @@ const main = async () => {
                   const isDouble = (preWram[0x02022fec - 0x02000000] & 1) !== 0;
                   let macroResult: MacroContext;
                   if (isDouble) {
+                    // Log battler 2's state before macro
+                    const b2Comm = ctx.wram[0x02024332 + 2 - 0x02000000];
+                    const b2Cursor = ctx.wram[0x020244ac + 2 - 0x02000000]; // gActionSelectionCursor[2]
+                    const b2BufCmd = ctx.wram[0x02023064 + 2 * 0x200 - 0x02000000]; // gBattleBufferA[2][0]
+                    console.log("[dbg] before macro: b2 comm=" + b2Comm + " cursor=" + b2Cursor + " bufCmd=0x" + b2BufCmd.toString(16));
+                    
                     // Wait for scripts to finish — battler 2's input ignored otherwise
                     ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
                     macroResult = ctx;
                     for (const step of macro) {
                       macroResult = await emulateParallel(pool, macroResult, step);
                     }
+                    
+                    // Log battler 2's state after macro
+                    const b2Comm2 = macroResult.wram[0x02024332 + 2 - 0x02000000];
+                    const b2Cursor2 = macroResult.wram[0x020244ac + 2 - 0x02000000];
+                    const b2BufCmd2 = macroResult.wram[0x02023064 + 2 * 0x200 - 0x02000000];
+                    console.log("[dbg] after macro:  b2 comm=" + b2Comm2 + " cursor=" + b2Cursor2 + " bufCmd=0x" + b2BufCmd2.toString(16));
                   } else {
                     macroResult = await executeMacro(pool, ctx, macro);
                   }
