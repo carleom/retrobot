@@ -1059,13 +1059,15 @@ const main = async () => {
                         path.resolve("data", id, "state.sav"),
                         stOv,
                       );
-                      const { rows: ovRows } = generateLayout(wrOv, id, 1);
+                      const { rows: ovRows, scene: ovScene } = generateLayout(wrOv, id, 1);
                       await message.channel.send({
                         content:
                           (player.nickname || player.displayName) +
                           ": Switched lead",
                         files: [{ attachment: recOv, name: recNameOv }],
-                        components: ovRows as any,
+                        components: ovScene === Scene.OVERWORLD
+                          ? [...ovRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
+                          : ovRows as any,
                       });
                       return;
                     }
