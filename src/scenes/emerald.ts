@@ -92,11 +92,12 @@ export class EmeraldSceneDetector implements SceneDetector {
     // Debug: log buffer command and comm state for battle scenes
     if (battleTypeFlags !== 0) {
       console.log(
-        "[detect] commState=" + commState +
-        " bufferCmd=0x" + bufferCmd.toString(16).padStart(2, "0") +
-        " chosenAction=" + chosenAction +
-        " comm1=" + readU8(wram, ADDR.gBattleCommunication + 1) +
-        " comm2=" + readU8(wram, ADDR.gBattleCommunication + 2),
+        "[detect] activeBattler=" + activeBattler +
+        " comm[0]=" + readU8(wram, ADDR.gBattleCommunication) +
+        " comm[1]=" + readU8(wram, ADDR.gBattleCommunication + 1) +
+        " chosenAction[0]=" + readU8(wram, ADDR.gChosenActionByBattler) +
+        " bufferCmd[0]=0x" + bufferCmd.toString(16).padStart(2, "0") +
+        " BG0_Y=" + readU8(wram, 0x02022e16) + (readU8(wram, 0x02022e17) << 8),
       );
     }
 
