@@ -73,13 +73,33 @@ export class EmeraldSceneDetector implements SceneDetector {
     // Buffer command at battler 0 (player's sub-menu commands always here)
     const bufferCmdPlayer = readU8(wram, ADDR.gBattleBufferA);
 
+    // ── Double-battle trace logging ────────────────────────────────────────
+    const isDouble = (battleTypeFlags & 1) !== 0;
+    if (isDouble) {
+      console.log(
+        "[dbg] double active=" + activeBattler +
+        " comm=[" + readU8(wram, ADDR.gBattleCommunication) +
+        "," + readU8(wram, ADDR.gBattleCommunication + 1) +
+        "," + readU8(wram, ADDR.gBattleCommunication + 2) +
+        "," + readU8(wram, ADDR.gBattleCommunication + 3) + "]" +
+        " act=[" + readU8(wram, ADDR.gChosenActionByBattler) +
+        "," + readU8(wram, ADDR.gChosenActionByBattler + 1) +
+        "," + readU8(wram, ADDR.gChosenActionByBattler + 2) +
+        "," + readU8(wram, ADDR.gChosenActionByBattler + 3) + "]" +
+        " bufCmd[0]=0x" + bufferCmdPlayer.toString(16) +
+        " bufCmd[" + activeBattler + "]=0x" + bufferCmd.toString(16),
+      );
+    }
+
     // ── Phase 2: Controller-driven UI states ──────────────────────────────
     // These surface via buffer commands and are reliable regardless of commState.
 
     if (bufferCmd === CONTROLLER_YESNOBOX) {
+      if (isDouble) console.log("[dbg] → " + Scene.BATTLE_YESNO + " (bufferCmd)");
       return Scene.BATTLE_YESNO;
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
+      if (isDouble) console.log("[dbg] → " + Scene.BATTLE_PKMN_SWITCH + " (bufferCmd)");
       return Scene.BATTLE_PKMN_SWITCH;
     }
 
@@ -97,33 +117,43 @@ export class EmeraldSceneDetector implements SceneDetector {
       // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
       const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
       if (comm1 === 0 || comm1 === 1) {
+        if (isDouble) console.log("[dbg] → " + Scene.BATTLE_YESNO + " (old yesnobox)");
         return Scene.BATTLE_YESNO;
       }
     }
 
     // ── Phase 4: CommState switch ─────────────────────────────────────────
 
+    let result: Scene;
     switch (commState) {
       case BattleCommState.STATE_BEFORE_ACTION_CHOSEN:
-        return Scene.BATTLE_FIGHT;
+        result = Scene.BATTLE_FIGHT;
+        break;
 
       case BattleCommState.STATE_WAIT_ACTION_CHOSEN:
-        return this._resolveSubMenu(chosenAction);
+        result = this._resolveSubMenu(chosenAction);
+        break;
 
       case BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN:
         // In double battles, after a move is picked, the game asks for a target.
         if (this.isDoubleBattle(wram) && chosenAction === ChosenAction.B_ACTION_USE_MOVE) {
-          return Scene.BATTLE_MOVE_TARGET;
+          result = Scene.BATTLE_MOVE_TARGET;
+        } else {
+          result = this._resolveSubMenu(chosenAction);
         }
-        return this._resolveSubMenu(chosenAction);
+        break;
 
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY:
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED:
-        return this._resolveSubMenu(chosenAction);
+        result = this._resolveSubMenu(chosenAction);
+        break;
 
       default:
-        return Scene.UNKNOWN;
+        result = Scene.UNKNOWN;
+        break;
     }
+    if (isDouble) console.log("[dbg] → " + result + " (commState switch)");
+    return result;
   }
 
   /**
