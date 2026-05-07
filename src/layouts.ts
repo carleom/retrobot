@@ -574,10 +574,10 @@ function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 function buildYesNo(gameId: string): ActionRowBuilder[] {
   return [
     row(
-      btn(`${gameId}-macro-yes`, "✅ Yes", ButtonStyle.Success),
-      btn(`${gameId}-macro-no`, "❌ No", ButtonStyle.Danger),
+      btn(`${gameId}-macro-yes`, "Yes", ButtonStyle.Success),
+      btn(`${gameId}-macro-no`, "No", ButtonStyle.Danger),
     ),
-    row(btn(`${gameId}-b-1`, "↩️ Cancel", ButtonStyle.Secondary)),
+    row(btn(`${gameId}-macro-manual`, "🎮 Manual", ButtonStyle.Secondary)),
   ];
 }
 
