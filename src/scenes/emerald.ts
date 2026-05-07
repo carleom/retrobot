@@ -33,6 +33,8 @@ const ADDR = {
 
 /** Battle controller command: Yes/No box (switch prompt, learn move, etc.). */
 const CONTROLLER_YESNOBOX = 0x05;
+/** Battle controller command: Choose a Pokémon (voluntary switch or faint replacement). */
+const CONTROLLER_CHOOSEPOKEMON = 0x08;
 
 // ── Detector Implementation ──────────────────────────────────────────────────
 
@@ -76,12 +78,18 @@ export class EmeraldSceneDetector implements SceneDetector {
       ADDR.gChosenActionByBattler + activeBattler,
     );
 
+    // Check for controller-driven UI states (reliable regardless of commState).
+    // These cover both voluntary and forced scenarios (e.g. faint replacement).
+    const bufferCmd = readU8(wram, ADDR.gBattleBufferA);
+    if (bufferCmd === CONTROLLER_YESNOBOX) {
+      return Scene.BATTLE_YESNO;
+    }
+    if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
+      return Scene.BATTLE_PKMN_SWITCH;
+    }
+
     switch (commState) {
       case BattleCommState.STATE_BEFORE_ACTION_CHOSEN:
-        // Check if a Yes/No box is active (switch prompt, learn move, etc.)
-        if (readU8(wram, ADDR.gBattleBufferA) === CONTROLLER_YESNOBOX) {
-          return Scene.BATTLE_YESNO;
-        }
         // Player is on the main action menu (FIGHT / BAG / PKMN / RUN).
         return Scene.BATTLE_FIGHT;
 

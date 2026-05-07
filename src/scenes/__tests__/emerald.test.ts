@@ -187,6 +187,37 @@ test("BEFORE_ACTION_CHOSEN without YESNOBOX → BATTLE_FIGHT (not yesno)", () =>
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
+// ── BATTLE_PKMN_SWITCH (party screen via CONTROLLER_CHOOSEPOKEMON) ──────────
+
+test("CONTROLLER_CHOOSEPOKEMON → BATTLE_PKMN_SWITCH (voluntary switch, comm=1)", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CHOSEN,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
+  // Party screen is open — buffer command takes priority
+  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
+});
+
+test("CONTROLLER_CHOOSEPOKEMON → BATTLE_PKMN_SWITCH (faint replacement, comm=confirmed)", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  // After a faint, commState might be CONFIRMED (the previous action finished)
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CONFIRMED,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  // Party screen is open for forced replacement
+  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
+});
+
 // ── BATTLE_MOVE_SELECT ───────────────────────────────────────────────────────
 
 test("STATE_WAIT_ACTION_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {
