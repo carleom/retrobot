@@ -19,7 +19,7 @@ import {
   ChosenAction,
   BattleTypeFlag,
 } from "../../scenes";
-import { generateLayout, LayoutResult } from "../../layouts";
+import { generateLayout, buildOverworldBag, buildOverworldBagTarget, LayoutResult } from "../../layouts";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -556,6 +556,115 @@ test("empty bag shows disabled placeholder buttons", () => {
     ballIdxs.every((i) => disabled[i] === true),
     "all ball buttons should be disabled when bag is empty",
   );
+});
+
+// ── Overworld Bag Layout ──────────────────────────────────────────────────────
+
+test("overworld bag shows healing items with quantities", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.encryptionKey, 0);
+  // Add Potion x8, Super Potion x3
+  writeBagItem(wram, ADDR.bagItems, 0, 13, 8); // Potion
+  writeBagItem(wram, ADDR.bagItems, 1, 22, 3); // Super Potion
+
+  const rows = buildOverworldBag(wram, GAME_ID);
+  const ids = getAllCustomIds(rows);
+
+  // Should have Potion and Super Potion buttons
+  assert(
+    ids.includes(`${GAME_ID}-macro-bag-item-13`),
+    "should have Potion (13) button",
+  );
+  assert(
+    ids.includes(`${GAME_ID}-macro-bag-item-22`),
+    "should have Super Potion (22) button",
+  );
+  // Should have a Back button
+  assert(
+    ids.some((id) => id.includes("-b-1")),
+    "should have Back button",
+  );
+});
+
+test("overworld bag disables items with 0 quantity", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.encryptionKey, 0);
+  // No items added — all qty=0 (not found)
+  const rows = buildOverworldBag(wram, GAME_ID);
+  const disabled = getAllDisabled(rows);
+
+  // First 5 buttons are the heal items, all should be disabled
+  const itemDisabled = disabled.slice(0, 5);
+  assert(
+    itemDisabled.every((d) => d === true),
+    "all item buttons should be disabled when qty=0",
+  );
+});
+
+// ── Overworld Bag Target Layout ───────────────────────────────────────────────
+
+test("overworld bag target shows party Pokémon with HP", () => {
+  const wram = createWram();
+  // Slot 0: Bulbasaur 45/80 — can heal
+  writePartyPokemon(wram, 0, 1, [33, 0, 0, 0], [25, 0, 0, 0], 45, 80);
+  const rows = buildOverworldBagTarget(wram, GAME_ID, 13);
+  const labels = getAllLabels(rows);
+  const ids = getAllCustomIds(rows);
+
+  // Should show Bulbasaur with HP
+  assert(
+    labels.some((l) => l.includes("BULBASAUR") && l.includes("45/80")),
+    "should have BULBASAUR 45/80",
+  );
+  // Custom ID includes slot and itemId
+  assert(
+    ids.includes(`${GAME_ID}-macro-bag-use-0-13`),
+    "should have use button for slot 0",
+  );
+});
+
+test("overworld bag target disables fainted, full-HP, and empty slots", () => {
+  const wram = createWram();
+  // Slot 0: fainted (hp=0)
+  writePartyPokemon(wram, 0, 1, [33, 0, 0, 0], [0, 0, 0, 0], 0, 80);
+  // Slot 1: full HP
+  writePartyPokemon(wram, 1, 4, [45, 0, 0, 0], [40, 0, 0, 0], 120, 120);
+  // Slot 2: empty (species=0, default from empty wram)
+
+  const rows = buildOverworldBagTarget(wram, GAME_ID, 13);
+  const labels = getAllLabels(rows);
+  const disabled = getAllDisabled(rows);
+
+  // Find button indices
+  const fntIdx = labels.findIndex((l) => l.includes("FNT"));
+  const fullIdx = labels.findIndex((l) => l.includes("Full"));
+  const emptyIdx = labels.findIndex((l) => l.includes("empty"));
+
+  assert(fntIdx >= 0 && disabled[fntIdx] === true, "fainted slot should be disabled");
+  assert(fullIdx >= 0 && disabled[fullIdx] === true, "full-HP slot should be disabled");
+  assert(emptyIdx >= 0 && disabled[emptyIdx] === true, "empty slot should be disabled");
+});
+
+// ── Yes/No Layout ─────────────────────────────────────────────────────────────
+
+test("Yes/No layout has Yes, No, and Manual buttons", () => {
+  // Import buildYesNo via generateLayout on a BATTLE_YESNO scene
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 0);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
+  writeU8(wram, 0x02023064, 0x05); // CONTROLLER_YESNOBOX
+
+  const result = generateLayout(wram, GAME_ID);
+  assert(result.scene === Scene.BATTLE_YESNO, "should be yesno scene");
+
+  const labels = getAllLabels(result.rows);
+  assert(labels.some((l) => l === "Yes"), "should have Yes button");
+  assert(labels.some((l) => l === "No"), "should have No button");
+
+  const ids = getAllCustomIds(result.rows);
+  assert(ids.includes(`${GAME_ID}-macro-manual`), "should have Manual toggle");
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

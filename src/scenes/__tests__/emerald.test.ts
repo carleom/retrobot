@@ -220,6 +220,97 @@ test("CONTROLLER_CHOOSEPOKEMON → BATTLE_PKMN_SWITCH (faint replacement, comm=c
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
 });
 
+// ── Old-Style YesNo Box (Cmd_yesnobox, gBattleCommunication hijacked) ───────
+
+test("Old yesnobox: comm[0]=1, comm[1]=0, activeBattler=2, bufCmd=0x10 → BATTLE_YESNO", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4); // BATTLE_TYPE_IS_MASTER
+  writeU8(wram, ADDR.gActiveBattler, 2); // non-player battler active
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN); // index 0 = 1
+  writeU8(wram, ADDR.gBattleCommunication + 1, 0); // cursor at top
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x10); // bufCmd[0] = leftover CONTROLLER_HEALTHBARUPDATE
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
+});
+
+test("Old yesnobox: comm[1]=1 (cursor at bottom) → BATTLE_YESNO", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 1, 1); // cursor at bottom
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x10);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
+});
+
+test("Old yesnobox NOT fired: activeBattler=0 (normal sub-menu)", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 0); // player battler — not old yesnobox
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 1, 0);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x10);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+test("Old yesnobox NOT fired: bufferCmd[0]=0x04 (CHOOSEACTION sub-menu)", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 1, 0);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION — real sub-menu
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+test("Old yesnobox NOT fired: bufferCmd[0]=0 (stale buffer, excluded)", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 1, 0);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  // bufferCmd = 0 (zero-initialized) — excluded from old yesnobox check
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+test("Old yesnobox NOT fired: comm[1]=2 (not a valid cursor position)", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 1, 2); // not 0 or 1
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x10);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+// ── Buffer per Active Battler ───────────────────────────────────────────────
+
+test("CHOOSEPOKEMON at battler 2 index → BATTLE_PKMN_SWITCH", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CONFIRMED);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  // gBattleBufferA[2][0] = 0x08 (stride 0x200, so +0x400 from base)
+  writeU8(wram, 0x02023064 + 2 * 0x200, 0x08); // CONTROLLER_CHOOSEPOKEMON at battler 2
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
+});
+
+test("YESNOBOX at battler 1 index → BATTLE_YESNO", () => {
+  const wram = createWram();
+  writeU32(wram, ADDR.gBattleTypeFlags, 4);
+  writeU8(wram, ADDR.gActiveBattler, 1);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
+  writeU8(wram, 0x02023064 + 1 * 0x200, 0x05); // CONTROLLER_YESNOBOX at battler 1
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
+});
+
 // ── BATTLE_MOVE_SELECT ───────────────────────────────────────────────────────
 
 test("STATE_WAIT_ACTION_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {
