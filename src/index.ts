@@ -951,27 +951,21 @@ const main = async () => {
                     av_info: {},
                   };
 
-                  // In double battles, wait until battler 2's exec flag is set,
-                  // meaning the controller is active and ready for input.
-                  // Without this, button presses fall on deaf ears during
-                  // B_ACTION_EXEC_SCRIPT (actionFunc=11).
+                  // In double battles, let battler 0's running script
+                  // (actionFunc=11) finish before the move macro. Step through
+                  // macro individually so the game processes each button press.
                   const isDouble = (preWram[0x02022fec - 0x02000000] & 1) !== 0;
+                  let macroResult: MacroContext;
                   if (isDouble) {
-                    const comm2 = preWram[0x02024332 + 2 - 0x02000000];
-                    if (comm2 === 1) { // STATE_WAIT_ACTION_CHOSEN — battler 2 waiting
-                      // Poll gBattleControllerExecFlags (0x02024068) for bit 2
-                      for (let poll = 0; poll < 60; poll++) {
-                        ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
-                        const execFlags = ctx.wram[0x02024068 - 0x02000000];
-                        if (execFlags & 4) { // bit 2 = battler 2 active
-                          console.log("[dbg] battler 2 controller active after " + poll + " polls");
-                          break;
-                        }
-                      }
+                    // Wait for scripts to finish — battler 2's input ignored otherwise
+                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
+                    macroResult = ctx;
+                    for (const step of macro) {
+                      macroResult = await emulateParallel(pool, macroResult, step);
                     }
+                  } else {
+                    macroResult = await executeMacro(pool, ctx, macro);
                   }
-
-                  const macroResult = await executeMacro(pool, ctx, macro);
 
                   // Use the existing autoplay system to advance through battle text/animations
                   const {
