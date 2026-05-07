@@ -80,7 +80,11 @@ export class EmeraldSceneDetector implements SceneDetector {
 
     // Check for controller-driven UI states (reliable regardless of commState).
     // These cover both voluntary and forced scenarios (e.g. faint replacement).
-    const bufferCmd = readU8(wram, ADDR.gBattleBufferA);
+    // Buffer commands are written to gBattleBufferA[gActiveBattler].
+    const bufferCmd = readU8(wram, ADDR.gBattleBufferA + activeBattler * 0x200);
+    // Also check player's buffer (index 0) — the sub-menu controller commands
+    // (CHOOSEACTION, CHOOSEMOVE) are always emitted for the player battler.
+    const bufferCmdPlayer = readU8(wram, ADDR.gBattleBufferA);
     if (bufferCmd === CONTROLLER_YESNOBOX) {
       return Scene.BATTLE_YESNO;
     }
@@ -95,9 +99,9 @@ export class EmeraldSceneDetector implements SceneDetector {
     if (commState === BattleCommState.STATE_WAIT_ACTION_CHOSEN
         && chosenAction === ChosenAction.B_ACTION_USE_MOVE
         && activeBattler !== 0
-        && bufferCmd !== 0
-        && bufferCmd !== 0x04 // CONTROLLER_CHOOSEACTION
-        && bufferCmd !== 0x06) { // CONTROLLER_CHOOSEMOVE
+        && bufferCmdPlayer !== 0
+        && bufferCmdPlayer !== 0x04 // CONTROLLER_CHOOSEACTION
+        && bufferCmdPlayer !== 0x06) { // CONTROLLER_CHOOSEMOVE
       // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
       const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
       if (comm1 === 0 || comm1 === 1) {
