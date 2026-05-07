@@ -63,6 +63,7 @@ import {
 } from "./layouts";
 import { Scene } from "./scenes";
 import { EmeraldSceneDetector, emeraldSceneDetector } from "./scenes/emerald";
+import { readU8 } from "./scenes";
 import { executeMacro, MacroContext, Macro, MacroStep } from "./macros";
 import {
   selectMoveMacro,
@@ -885,6 +886,43 @@ const main = async () => {
                     } else if (targetAction === "right") {
                       macro = nextTargetMacro();
                       macroLabel = "Next Target";
+                    } else if (targetAction === "1" || targetAction === "3") {
+                      // Double battle: select specific enemy battler as target
+                      const targetBattler = parseInt(targetAction);
+                      await interaction.deferUpdate();
+                      message.channel.sendTyping();
+                      const { stateBytes, gameBytes, wram: tgtWram } = await readCurrentState(pool, id, info);
+                      // gMoveSelectionCursor[0] = current target position (0=battler1, 1=battler3)
+                      const curCursor = readU8(tgtWram, 0x020244b0);
+                      const desired = targetBattler === 1 ? 0 : 1;
+                      const steps: MacroStep[] = [];
+                      if (curCursor !== desired) {
+                        steps.push({ input: { LEFT: true }, duration: 4 });
+                        steps.push({ input: {}, duration: 6 });
+                      }
+                      steps.push({ input: { A: true }, duration: 4 });
+                      steps.push({ input: {}, duration: 30 });
+                      const tgtCtx: MacroContext = {
+                        coreType: info.coreType, game: gameBytes, state: stateBytes,
+                        frames: [], wram: new Uint8Array(0), av_info: {},
+                      };
+                      const tgtResult = await executeMacro(pool, tgtCtx, steps);
+                      fs.writeFileSync(path.resolve("data", id, "state.sav"), tgtResult.state);
+                      const { recording, recordingName, state: finalState, wram: finalWram } = await emulate(
+                        pool, info.coreType,
+                        new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                        tgtResult.state,
+                        { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+                        [],
+                      );
+                      fs.writeFileSync(path.resolve("data", id, "state.sav"), finalState);
+                      const { rows: tgtRows } = generateLayout(finalWram, id, 1);
+                      await message.channel.send({
+                        content: (player.nickname || player.displayName) + ": Target " + targetAction,
+                        files: [{ attachment: recording, name: recordingName }],
+                        components: tgtRows as any,
+                      });
+                      return;
                     } else {
                       await interaction.update({});
                       return;

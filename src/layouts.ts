@@ -599,36 +599,27 @@ function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 
 // ── Move Target Layout (double battles — pick which enemy to hit) ────────────
 
+const BATTLEMON_SIZE = 0x58; // sizeof(struct BattlePokemon)
+const BATTLEMON_BASE = 0x02024084; // gBattleMons
+
 function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
-  const battlersCount = readU8(wram, 0x0202406c);
-  const cursor = readU8(wram, 0x020244b0); // gMoveSelectionCursor[gActiveBattler]
 
-  // Build target buttons for enemy battlers (1 and 3 in doubles).
-  // Show LEFT/UP and RIGHT/DOWN navigation + confirm (A) + back (B).
+  // Read enemy battlers (1 and 3 in doubles) species names
   const targetButtons: ButtonBuilder[] = [];
-
-  // Row 1: Target selection — show direction hints
-  targetButtons.push(
-    btn(
-      `${gameId}-macro-target-left`,
-      "⬅️ Prev Target",
-      ButtonStyle.Primary,
-      false,
-    ),
-    btn(
-      `${gameId}-macro-target-confirm`,
-      "✅ Confirm (A)",
-      ButtonStyle.Success,
-      false,
-    ),
-    btn(
-      `${gameId}-macro-target-right`,
-      "➡️ Next Target",
-      ButtonStyle.Primary,
-      false,
-    ),
-  );
+  for (const battler of [1, 3]) {
+    const speciesAddr = BATTLEMON_BASE + battler * BATTLEMON_SIZE;
+    const species = readU16(wram, speciesAddr);
+    const name = speciesName(species);
+    targetButtons.push(
+      btn(
+        `${gameId}-macro-target-${battler}`,
+        name,
+        ButtonStyle.Primary,
+        species === 0,
+      ),
+    );
+  }
   rows.push(row(...targetButtons));
 
   // Row 2: Back to move select
