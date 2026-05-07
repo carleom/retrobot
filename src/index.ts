@@ -750,9 +750,14 @@ const main = async () => {
                       ctx = await emulateParallel(pool, ctx, { input: { DOWN: true }, duration: 2 });
                       ctx = await emulateParallel(pool, ctx, { input: {}, duration: 2 });
                     }
-                    // Open bag
+                    // Open bag — generous wait (same 300f as battle item handler)
                     ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
-                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
+                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 300 });
+
+                    // Verify bag opened by reading current pocket
+                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+                    const currPocket = ctx.wram[0x0203ce5d - 0x02000000]; // gBagPosition.pocket
+                    console.log("[ow-bag] bag open, pocket=" + currPocket);
 
                     // 2. Read items, find the target item's display position
                     const items = readBagPocket(ctx.wram, 0);
@@ -777,9 +782,13 @@ const main = async () => {
                     // Select item → opens USE/CANCEL submenu
                     ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
                     ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
-                    // Select USE
+                    // Select USE → opens party screen
                     ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
                     ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
+
+                    // Verify party screen opened
+                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+                    console.log("[ow-bag] party screen opened");
 
                     // 3. Party screen is open — navigate to target slot
                     // Cursor starts at slot 0 in SINGLE layout
