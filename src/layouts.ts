@@ -404,8 +404,78 @@ export function buildOverworld(
       btn(`${gameId}-b-${m}`, "B", ButtonStyle.Danger, false),
       btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
     ),
-    row(btn(`${gameId}-macro-switch`, "", ButtonStyle.Secondary, false, "🔄")),
+    row(
+      btn(`${gameId}-macro-switch`, "", ButtonStyle.Secondary, false, "🔄"),
+      btn(`${gameId}-macro-bag`, "", ButtonStyle.Secondary, false, "🎒"),
+    ),
   ];
+}
+
+// ── Overworld Bag Layout (potion quick-access) ────────────────────────────────
+
+const HEAL_ITEM_IDS = [13, 22, 21, 20, 19]; // Potion, Super, Hyper, Max, Full Restore
+
+export function buildOverworldBag(
+  wram: Uint8Array,
+  gameId: string,
+): ActionRowBuilder[] {
+  const itemButtons = HEAL_ITEM_IDS.map((id) => {
+    const qty = findBagItem(wram, 0, id);
+    const name = itemName(id);
+    const healEmoji = getEmojiIds()[itemEmojiMap[id]] || undefined;
+    return btn(
+      `${gameId}-macro-bag-item-${id}`,
+      healEmoji ? "" : name,
+      ButtonStyle.Secondary,
+      qty === 0,
+      healEmoji,
+    );
+  });
+  return [
+    row(...itemButtons),
+    row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)),
+  ];
+}
+
+// ── Overworld Bag Target Layout (pick Pokémon to heal) ────────────────────────
+
+export function buildOverworldBagTarget(
+  wram: Uint8Array,
+  gameId: string,
+  itemId: number,
+): ActionRowBuilder[] {
+  const rows: ActionRowBuilder[] = [];
+
+  for (let rowIdx = 0; rowIdx < 2; rowIdx++) {
+    const buttons: ButtonBuilder[] = [];
+    for (let col = 0; col < 3; col++) {
+      const slotIdx = rowIdx * 3 + col;
+      const pkmn = readPartyPokemon(wram, slotIdx);
+      if (pkmn.species === 0) {
+        buttons.push(btn(noneId(gameId), "— empty —", ButtonStyle.Secondary, true));
+      } else if (pkmn.currentHp === 0) {
+        const name = speciesName(pkmn.species);
+        buttons.push(btn(`${gameId}-macro-bag-use-${slotIdx}-${itemId}`, `${name} (FNT)`, ButtonStyle.Secondary, true));
+      } else if (pkmn.currentHp === pkmn.maxHp) {
+        const name = speciesName(pkmn.species);
+        buttons.push(btn(`${gameId}-macro-bag-use-${slotIdx}-${itemId}`, `${name} (Full)`, ButtonStyle.Secondary, true));
+      } else {
+        const name = speciesName(pkmn.species);
+        buttons.push(
+          btn(
+            `${gameId}-macro-bag-use-${slotIdx}-${itemId}`,
+            `${name} ${pkmn.currentHp}/${pkmn.maxHp}`,
+            ButtonStyle.Primary,
+            false,
+          ),
+        );
+      }
+    }
+    rows.push(row(...buttons));
+  }
+
+  rows.push(row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)));
+  return rows;
 }
 
 // ── Battle Fight Layout (main menu: FIGHT / BAG / PKMN / RUN) ────────────────
