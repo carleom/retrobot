@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
-function multiplierButton(
+export function multiplierButton(
   id: string,
   multiplier: number,
   messageMultiplier: number,
@@ -22,7 +22,7 @@ export function buildMultiplierRows(
   multiplier: number,
   enabledMultipliers: number[],
   enabled: boolean,
-): ActionRowBuilder[] {
+): any[] {
   const rows: ActionRowBuilder[] = [];
   const m = [...enabledMultipliers];
   if (m.length > 0) {

@@ -83,6 +83,7 @@ import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
 import { Frame } from "./worker";
 import { handleBattleItem } from "./handlers/battleItem";
 import { handleOverworldBagUse } from "./handlers/overworldBag";
+import { buildMultiplierRows, multiplierButton } from "./handlers/components";
 import encode from "image-encode";
 import { arraysEqual, rgb565toRaw } from "./util";
 import * as tmp from "tmp";
@@ -102,34 +103,6 @@ const pool = new Piscina({
   execArgv: ["-r", "ts-node/register"],
   ...(MAX_WORKERS == -1 ? {} : { maxThreads: MAX_WORKERS }),
 });
-
-/** Build multiplier button rows for appending to context-aware layouts. */
-const buildMultiplierRows = (
-  id: string,
-  multiplier: number,
-  enabledMultipliers: number[],
-  enabled: boolean,
-): any[] => {
-  const rows: any[] = [];
-  const m = [...enabledMultipliers];
-  if (m.length > 0) {
-    rows.push(
-      new ActionRowBuilder().addComponents(
-        m
-          .splice(0, 5)
-          .map((n: number) => multiplierButton(id, n, multiplier, enabled)),
-      ),
-    );
-  }
-  if (m.length > 0) {
-    rows.push(
-      new ActionRowBuilder().addComponents(
-        m.map((n: number) => multiplierButton(id, n, multiplier, enabled)),
-      ),
-    );
-  }
-  return rows;
-};
 
 /** Encode macro frames to GIF/MP4. Simplified from emulate.ts. */
 const encodeMacroRecording = async (
@@ -1292,23 +1265,6 @@ const parseInput = (input: string) => {
 
 const isNumeric = (value) => {
   return /^\d+$/.test(value);
-};
-
-const multiplierButton = (
-  id: string,
-  multiplier: number,
-  messageMultiplier: number,
-  enabled: boolean,
-) => {
-  return new ButtonBuilder()
-    .setCustomId(id + "-" + multiplier.toString() + "-" + messageMultiplier)
-    .setEmoji(multiplier == 10 ? "🔟" : multiplier.toString() + "\u20E3") // Combining Enclosing Keycap, turns a digit into an emoji
-    .setDisabled(!enabled)
-    .setStyle(
-      messageMultiplier == multiplier
-        ? ButtonStyle.Primary
-        : ButtonStyle.Secondary,
-    );
 };
 
 const buttons = (
