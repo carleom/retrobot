@@ -82,10 +82,22 @@ export class EmeraldSceneDetector implements SceneDetector {
     // These cover both voluntary and forced scenarios (e.g. faint replacement).
     const bufferCmd = readU8(wram, ADDR.gBattleBufferA);
     if (bufferCmd === CONTROLLER_YESNOBOX) {
+      console.log("[detect] YESNOBOX via bufferCmd=0x05");
       return Scene.BATTLE_YESNO;
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
       return Scene.BATTLE_PKMN_SWITCH;
+    }
+
+    // Debug: log buffer command and comm state for battle scenes
+    if (battleTypeFlags !== 0) {
+      console.log(
+        "[detect] commState=" + commState +
+        " bufferCmd=0x" + bufferCmd.toString(16).padStart(2, "0") +
+        " chosenAction=" + chosenAction +
+        " comm1=" + readU8(wram, ADDR.gBattleCommunication + 1) +
+        " comm2=" + readU8(wram, ADDR.gBattleCommunication + 2),
+      );
     }
 
     switch (commState) {
