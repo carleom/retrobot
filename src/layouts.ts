@@ -404,7 +404,7 @@ export function buildOverworld(
       btn(`${gameId}-b-${m}`, "B", ButtonStyle.Danger, false),
       btn(`${gameId}-start-${m}`, "", ButtonStyle.Secondary, false, "▶️"),
     ),
-    row(btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary)),
+    row(btn(`${gameId}-macro-switch`, "", ButtonStyle.Secondary, false, "🔄")),
   ];
 }
 
@@ -479,14 +479,14 @@ function buildBattleFight(
 
   // Row 4 (or 3 in trainer): Switch, Manual, Run
   const actionButtons: ButtonBuilder[] = [
-    btn(`${gameId}-macro-switch`, "🔄 Switch", ButtonStyle.Secondary),
-    btn(`${gameId}-macro-manual`, "🎮 Manual", ButtonStyle.Secondary),
+    btn(`${gameId}-macro-switch`, "", ButtonStyle.Secondary, false, "🔄"),
+    btn(`${gameId}-macro-manual`, "", ButtonStyle.Secondary, false, "🎮"),
   ];
 
   // Run only available in wild battles
   if (!isTrainer) {
     actionButtons.push(
-      btn(`${gameId}-macro-run`, "🏃 Run", ButtonStyle.Danger),
+      btn(`${gameId}-macro-run`, "", ButtonStyle.Danger, false, "🏃"),
     );
   }
 
