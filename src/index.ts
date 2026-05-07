@@ -1070,7 +1070,7 @@ const main = async () => {
                       return;
                     }
 
-                    // Battle switch: navigate to party screen
+                    // Battle switch: navigate to party screen (or skip if already open via faint replacement)
                     const stateBytes2 = new Uint8Array(
                       fs.readFileSync(path.resolve("data", id, "state.sav")),
                     );
@@ -1085,16 +1085,32 @@ const main = async () => {
                       wram: new Uint8Array(0),
                       av_info: {},
                     };
-                    let navRes = await executeMacro(
-                      pool,
-                      navCtx2,
-                      navigateToPartyMacro(),
-                    );
-                    // Wait for party screen to fully load (120 frames = 2 seconds)
-                    navRes = await emulateParallel(pool, navRes, {
-                      input: {},
-                      duration: 120,
-                    });
+                    // Check if party screen is already open (faint replacement)
+                    const alreadyOnParty =
+                      ctxWram[0x02023064 - 0x02000000] === 0x08; // CONTROLLER_CHOOSEPOKEMON
+                    let navRes: MacroContext;
+                    if (alreadyOnParty) {
+                      // Party screen already open — skip navigation, start from current state
+                      navRes = {
+                        coreType: info.coreType,
+                        game: gameBytes2,
+                        state: stateBytes2,
+                        frames: [],
+                        wram: ctxWram,
+                        av_info: {},
+                      };
+                    } else {
+                      navRes = await executeMacro(
+                        pool,
+                        navCtx2,
+                        navigateToPartyMacro(),
+                      );
+                      // Wait for party screen to fully load (120 frames = 2 seconds)
+                      navRes = await emulateParallel(pool, navRes, {
+                        input: {},
+                        duration: 120,
+                      });
+                    }
                     const targetSlot = parseInt(parts[3]);
                     // Read gBattlePartyCurrentOrder (3 bytes at 0x0203CF00, nibble-packed)
                     // to find which display position has the target party slot
