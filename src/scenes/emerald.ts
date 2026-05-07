@@ -86,11 +86,23 @@ export class EmeraldSceneDetector implements SceneDetector {
     // (CHOOSEACTION, CHOOSEMOVE) are always emitted for the player battler.
     const bufferCmdPlayer = readU8(wram, ADDR.gBattleBufferA);
     if (bufferCmd === CONTROLLER_YESNOBOX) {
+      console.log("[detect] YESNOBOX via bufferCmd[active=" + activeBattler + "]=0x05");
       return Scene.BATTLE_YESNO;
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
+      console.log("[detect] CHOOSEPOKEMON via bufferCmd[active=" + activeBattler + "]=0x08");
       return Scene.BATTLE_PKMN_SWITCH;
     }
+
+    // Debug: trace detector state
+    console.log(
+      "[detect] activeBattler=" + activeBattler +
+      " comm[0]=" + commState +
+      " chosenAction[0]=" + chosenAction +
+      " bufCmd[0]=0x" + bufferCmdPlayer.toString(16) +
+      " bufCmd[active]=0x" + bufferCmd.toString(16) +
+      " comm[1]=" + readU8(wram, ADDR.gBattleCommunication + 1),
+    );
 
     // Check if the old-style yesnobox (Cmd_yesnobox in battle script) has
     // overwritten gBattleCommunication[0] = 1. This looks like
