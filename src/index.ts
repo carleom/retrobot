@@ -796,10 +796,15 @@ const main = async () => {
                       ctx = await emulateParallel(pool, ctx, { input: { DOWN: true }, duration: 4 });
                       ctx = await emulateParallel(pool, ctx, { input: {}, duration: 6 });
                     }
-                    // Select and confirm
+                    // Select and confirm — generous wait for item use animation + text
+                    ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
+                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
+
+                    // Advance through "Restored HP!" text
                     ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
                     ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
-                    // B to exit remaining menus (back to overworld)
+
+                    // B to exit menus: bag pocket → bag main → start menu → overworld
                     for (let i = 0; i < 5; i++) {
                       ctx = await emulateParallel(pool, ctx, { input: { B: true }, duration: 4 });
                       ctx = await emulateParallel(pool, ctx, { input: {}, duration: 20 });
