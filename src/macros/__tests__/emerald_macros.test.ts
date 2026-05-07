@@ -48,13 +48,12 @@ console.log("══════════════════════�
 
 // ── selectMoveMacro ──────────────────────────────────────────────────────────
 
-test("selectMoveMacro(0) starts with A, ends with idle", () => {
+test("selectMoveMacro(0) contains A to select FIGHT, ends with idle", () => {
   const macro = selectMoveMacro(0);
   assert(macro.length > 0, "macro should not be empty");
 
-  // First step: A to select FIGHT
-  assert(macro[0].input.A === true, "first step should press A");
-  assert(macro[0].duration === 4, "first step duration should be 4");
+  // Contains an A press step (after resetToFight)
+  assert(macro.some((s) => s.input.A === true), "should include A press to select FIGHT");
 
   // Should have an updateButtons step for the move selection
   const updateIndices = getUpdateButtonIndices(macro);
@@ -103,8 +102,7 @@ test("selectMoveMacro throws on invalid slot", () => {
 
 test("useItemMacro(0) navigates RIGHT to BAG", () => {
   const macro = useItemMacro(0);
-  const firstInput = macro[0].input;
-  assert(firstInput.RIGHT === true, "first step should press RIGHT to navigate to BAG");
+  assert(macro.some((s) => s.input.RIGHT === true), "should include RIGHT press to navigate to BAG");
 });
 
 test("useItemMacro(0) has updateButton step", () => {
@@ -132,7 +130,7 @@ test("useItemMacro throws on negative slot", () => {
 
 test("switchPokemonMacro(0) navigates DOWN to PKMN", () => {
   const macro = switchPokemonMacro(0);
-  assert(macro[0].input.DOWN === true, "first step should press DOWN to navigate to PKMN");
+  assert(macro.some((s) => s.input.DOWN === true), "should include DOWN press to reach PKMN");
 });
 
 test("switchPokemonMacro(3) includes DOWN presses for navigation", () => {

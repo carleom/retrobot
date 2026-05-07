@@ -71,12 +71,30 @@ export class EmeraldSceneDetector implements SceneDetector {
     }
 
     // In battle — read the action selection state machine
-    // Always use battler 0 for the player's commState. gActiveBattler can be
-    // non-zero during opponent turn / switch-in, but the player's scene is
-    // determined by battler 0's state.
     const activeBattler = readU8(wram, ADDR.gActiveBattler);
     const commState = readU8(wram, ADDR.gBattleCommunication); // index 0
     const chosenAction = readU8(wram, ADDR.gChosenActionByBattler); // index 0
+
+    // Read all 4 battler states for double battle debugging
+    const comm0 = readU8(wram, ADDR.gBattleCommunication);
+    const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
+    const comm2 = readU8(wram, ADDR.gBattleCommunication + 2);
+    const comm3 = readU8(wram, ADDR.gBattleCommunication + 3);
+    const act0 = readU8(wram, ADDR.gChosenActionByBattler);
+    const act1 = readU8(wram, ADDR.gChosenActionByBattler + 1);
+    const act2 = readU8(wram, ADDR.gChosenActionByBattler + 2);
+    const act3 = readU8(wram, ADDR.gChosenActionByBattler + 3);
+    const isDouble = (battleTypeFlags & 1) !== 0;
+
+    console.log(
+      "[detect] double=" + isDouble +
+      " active=" + activeBattler +
+      " flags=0x" + battleTypeFlags.toString(16) +
+      " | comm: [" + comm0 + "," + comm1 + "," + comm2 + "," + comm3 + "]" +
+      " | action: [" + act0 + "," + act1 + "," + act2 + "," + act3 + "]" +
+      " | bufCmd[0]=0x" + readU8(wram, ADDR.gBattleBufferA).toString(16) +
+      " bufCmd[" + activeBattler + "]=0x" + readU8(wram, ADDR.gBattleBufferA + activeBattler * 0x200).toString(16),
+    );
 
     // Check for controller-driven UI states (reliable regardless of commState).
     // These cover both voluntary and forced scenarios (e.g. faint replacement).
@@ -86,23 +104,11 @@ export class EmeraldSceneDetector implements SceneDetector {
     // (CHOOSEACTION, CHOOSEMOVE) are always emitted for the player battler.
     const bufferCmdPlayer = readU8(wram, ADDR.gBattleBufferA);
     if (bufferCmd === CONTROLLER_YESNOBOX) {
-      console.log("[detect] YESNOBOX via bufferCmd[active=" + activeBattler + "]=0x05");
-      return Scene.BATTLE_YESNO;
+      return this.logAndReturn("[detect] YESNOBOX via bufferCmd", Scene.BATTLE_YESNO);
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
-      console.log("[detect] CHOOSEPOKEMON via bufferCmd[active=" + activeBattler + "]=0x08");
-      return Scene.BATTLE_PKMN_SWITCH;
+      return this.logAndReturn("[detect] CHOOSEPOKEMON via bufferCmd", Scene.BATTLE_PKMN_SWITCH);
     }
-
-    // Debug: trace detector state
-    console.log(
-      "[detect] activeBattler=" + activeBattler +
-      " comm[0]=" + commState +
-      " chosenAction[0]=" + chosenAction +
-      " bufCmd[0]=0x" + bufferCmdPlayer.toString(16) +
-      " bufCmd[active]=0x" + bufferCmd.toString(16) +
-      " comm[1]=" + readU8(wram, ADDR.gBattleCommunication + 1),
-    );
 
     // Check if the old-style yesnobox (Cmd_yesnobox in battle script) has
     // overwritten gBattleCommunication[0] = 1. This looks like
@@ -117,41 +123,40 @@ export class EmeraldSceneDetector implements SceneDetector {
       // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
       const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
       if (comm1 === 0 || comm1 === 1) {
-        console.log("[detect] old yesnobox → BATTLE_YESNO");
-        return Scene.BATTLE_YESNO;
+        return this.logAndReturn("[detect] old yesnobox", Scene.BATTLE_YESNO);
       }
     }
 
+    let result: Scene;
     switch (commState) {
       case BattleCommState.STATE_BEFORE_ACTION_CHOSEN:
-        // Player is on the main action menu (FIGHT / BAG / PKMN / RUN).
-        return Scene.BATTLE_FIGHT;
-
+        result = Scene.BATTLE_FIGHT;
+        break;
       case BattleCommState.STATE_WAIT_ACTION_CHOSEN:
-        // Player is in a sub-menu. Which one depends on the high-level action.
-        return this._resolveSubMenu(chosenAction);
-
+        result = this._resolveSubMenu(chosenAction);
+        break;
       case BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN:
-        // Sub-action picked (e.g., specific move/item selected). Still in the
-        // sub-menu context — resolve by chosen action.
-        // In double battles, after a move is picked, the game asks for a target.
-        if (
-          this.isDoubleBattle(wram) &&
-          chosenAction === ChosenAction.B_ACTION_USE_MOVE
-        ) {
-          return Scene.BATTLE_MOVE_TARGET;
+        if (this.isDoubleBattle(wram) && chosenAction === ChosenAction.B_ACTION_USE_MOVE) {
+          result = Scene.BATTLE_MOVE_TARGET;
+        } else {
+          result = this._resolveSubMenu(chosenAction);
         }
-        return this._resolveSubMenu(chosenAction);
-
+        break;
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY:
       case BattleCommState.STATE_WAIT_ACTION_CONFIRMED:
-        // Action confirmed and executing — stay in sub-menu context
-        // (e.g. bag loading, move animating). Resolve by chosen action.
-        return this._resolveSubMenu(chosenAction);
-
+        result = this._resolveSubMenu(chosenAction);
+        break;
       default:
-        return Scene.UNKNOWN;
+        result = Scene.UNKNOWN;
+        break;
     }
+    console.log("[detect] → " + result);
+    return result;
+  }
+
+  private logAndReturn(msg: string, scene: Scene): Scene {
+    console.log(msg + " → " + scene);
+    return scene;
   }
 
   /**

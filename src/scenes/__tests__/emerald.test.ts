@@ -58,9 +58,10 @@ function writeU32(wram: Uint8Array, addr: number, value: number): void {
   wram[off + 3] = (value >> 24) & 0xff;
 }
 
-/** Set up a basic battle state: active battler = 0, wild single battle. */
+/** Set up a basic battle state: active battler = 0, wild single battle.
+ *  Uses BATTLE_TYPE_IS_MASTER (1<<2=4) which is always set in non-link battles. */
 function setupBattleState(wram: Uint8Array): void {
-  writeU32(wram, ADDR.gBattleTypeFlags, 1); // non-zero, not trainer
+  writeU32(wram, ADDR.gBattleTypeFlags, 4); // BATTLE_TYPE_IS_MASTER, no double/trainer bits
   writeU8(wram, ADDR.gActiveBattler, 0); // player is active battler
 }
 
@@ -137,7 +138,7 @@ test("STATE_BEFORE_ACTION_CHOSEN + USE_MOVE (returning from sub) → BATTLE_FIGH
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
-test("STATE_WAIT_ACTION_CONFIRMED → BATTLE_FIGHT", () => {
+test("STATE_WAIT_ACTION_CONFIRMED → resolves via chosenAction (B_ACTION_USE_MOVE → BATTLE_MOVE_SELECT)", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -146,10 +147,10 @@ test("STATE_WAIT_ACTION_CONFIRMED → BATTLE_FIGHT", () => {
     BattleCommState.STATE_WAIT_ACTION_CONFIRMED,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
-test("STATE_WAIT_ACTION_CONFIRMED_STANDBY → BATTLE_FIGHT", () => {
+test("STATE_WAIT_ACTION_CONFIRMED_STANDBY → resolves via chosenAction (B_ACTION_NONE → BATTLE_FIGHT)", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -157,6 +158,7 @@ test("STATE_WAIT_ACTION_CONFIRMED_STANDBY → BATTLE_FIGHT", () => {
     ADDR.gBattleCommunication,
     BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY,
   );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
@@ -360,13 +362,13 @@ test("Always reads battler 0 regardless of gActiveBattler", () => {
 
 test("isTrainerBattle: wild battle → false", () => {
   const wram = createWram();
-  writeU32(wram, ADDR.gBattleTypeFlags, 1); // just some non-zero flag, no trainer bit
+  writeU32(wram, ADDR.gBattleTypeFlags, 4); // BATTLE_TYPE_IS_MASTER only
   assert(!detector.isTrainerBattle(wram), "wild battle should not be trainer");
 });
 
 test("isTrainerBattle: trainer battle → true", () => {
   const wram = createWram();
-  writeU32(wram, ADDR.gBattleTypeFlags, BattleTypeFlag.BATTLE_TYPE_TRAINER);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER); // IS_MASTER + TRAINER
   assert(
     detector.isTrainerBattle(wram),
     "trainer bit set should be trainer battle",
@@ -375,13 +377,13 @@ test("isTrainerBattle: trainer battle → true", () => {
 
 test("isDoubleBattle: single → false", () => {
   const wram = createWram();
-  writeU32(wram, ADDR.gBattleTypeFlags, 0);
-  assert(!detector.isDoubleBattle(wram), "zero flags should be single battle");
+  writeU32(wram, ADDR.gBattleTypeFlags, 4); // BATTLE_TYPE_IS_MASTER only
+  assert(!detector.isDoubleBattle(wram), "no double bit should be single battle");
 });
 
 test("isDoubleBattle: double flag → true", () => {
   const wram = createWram();
-  writeU32(wram, ADDR.gBattleTypeFlags, BattleTypeFlag.BATTLE_TYPE_DOUBLE);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_DOUBLE); // IS_MASTER + DOUBLE
   assert(
     detector.isDoubleBattle(wram),
     "double bit set should be double battle",

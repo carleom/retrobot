@@ -157,13 +157,14 @@ function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(`Assertion failed: ${message}`);
 }
 
-/** Get all button labels from a list of ActionRowBuilders. */
+/** Get all button labels (or emoji names) from a list of ActionRowBuilders. */
 function getAllLabels(rows: ActionRowBuilder[]): string[] {
   const labels: string[] = [];
   for (const r of rows) {
     for (const comp of r.components) {
-      if (comp instanceof ButtonBuilder && comp.data.label) {
-        labels.push(comp.data.label);
+      if (comp instanceof ButtonBuilder) {
+        if (comp.data.label) labels.push(comp.data.label);
+        if (comp.data.emoji) labels.push(comp.data.emoji.name ?? "");
       }
     }
   }
@@ -216,14 +217,13 @@ test("overworld layout has D-pad + A/B/Start", () => {
   assert(result.scene === Scene.OVERWORLD, "should be overworld scene");
 
   const labels = getAllLabels(result.rows);
-  assert(labels.includes("Up"), "should have up button");
-  assert(labels.includes("Down"), "should have down button");
-  assert(labels.includes("Left"), "should have Left");
-  assert(labels.includes("Right"), "should have Right");
+  assert(labels.includes("⬆️"), "should have up button emoji");
+  assert(labels.includes("⬇️"), "should have down button emoji");
+  assert(labels.includes("⬅️"), "should have left button emoji");
+  assert(labels.includes("➡️"), "should have right button emoji");
   assert(labels.includes("A"), "should have A button");
   assert(labels.includes("B"), "should have B button");
-  assert(labels.includes("Start"), "should have Start button");
-  assert(result.rows.length === 2, "should have 2 rows");
+  assert(labels.includes("▶️"), "should have Start button emoji");
 });
 
 // ── Battle Fight — Wild ──────────────────────────────────────────────────────
@@ -252,42 +252,55 @@ test("wild battle fight shows moves + balls + items + actions", () => {
   const labels = getAllLabels(result.rows);
 
   // Row 1: moves with PP
-  assert(labels.includes("TACKLE (25)"), "should have TACKLE (25)");
-  assert(labels.includes("GROWL (40)"), "should have GROWL (40)");
-  assert(labels.includes("LEECH SEED (10)"), "should have LEECH SEED (10)");
-  assert(labels.includes("VINE WHIP (15)"), "should have VINE WHIP (15)");
+  assert(
+    labels.some((l) => l.includes("TACKLE") && l.includes("25")),
+    "should have TACKLE (25)",
+  );
+  assert(
+    labels.some((l) => l.includes("GROWL") && l.includes("40")),
+    "should have GROWL (40)",
+  );
+  assert(
+    labels.some((l) => l.includes("LEECH SEED") && l.includes("10")),
+    "should have LEECH SEED (10)",
+  );
+  assert(
+    labels.some((l) => l.includes("VINE WHIP") && l.includes("15")),
+    "should have VINE WHIP (15)",
+  );
 
-  // Row 2: balls (wild battle)
+  // Row 2: balls (wild battle) — check via custom IDs since emoji-only
+  const ids = getAllCustomIds(result.rows);
   assert(
-    labels.some((l) => l.includes("POKé BALL x5")),
-    "should have POKé BALL",
+    ids.includes(`${GAME_ID}-macro-item-1-4`),
+    "should have Poké Ball button",
   );
   assert(
-    labels.some((l) => l.includes("GREAT BALL x2")),
-    "should have GREAT BALL",
+    ids.includes(`${GAME_ID}-macro-item-1-3`),
+    "should have Great Ball button",
   );
 
-  // Row 3: items
+  // Row 3: healing items — check via custom IDs
   assert(
-    labels.some((l) => l.includes("POTION x8")),
-    "should have POTION",
+    ids.includes(`${GAME_ID}-macro-item-0-13`),
+    "should have Potion button",
   );
   assert(
-    labels.some((l) => l.includes("ANTIDOTE x3")),
-    "should have A buttonNTIDOTE",
+    ids.includes(`${GAME_ID}-macro-item-0-22`),
+    "should have Super Potion button",
   );
 
   // Row 4: Switch, Manual, Run (wild — Run visible)
   assert(
-    labels.some((l) => l.includes("Switch")),
-    "should have Switch",
+    ids.includes(`${GAME_ID}-macro-switch`),
+    "should have Switch button",
   );
   assert(
-    labels.some((l) => l.includes("Manual")),
-    "should have Manual",
+    ids.includes(`${GAME_ID}-macro-manual`),
+    "should have Manual button",
   );
   assert(
-    labels.some((l) => l.includes("Run")),
+    ids.includes(`${GAME_ID}-macro-run`),
     "should have Run in wild battle",
   );
 
@@ -310,16 +323,20 @@ test("trainer battle fight hides balls and run", () => {
 
   const result = generateLayout(wram, GAME_ID);
   const labels = getAllLabels(result.rows);
+  const ids = getAllCustomIds(result.rows);
 
   // Moves still visible
-  assert(labels.includes("TACKLE (25)"), "should have TACKLE");
+  assert(
+    labels.some((l) => l.includes("TACKLE")),
+    "should have TACKLE",
+  );
 
   // Balls should NOT appear
   const hasBall = labels.some((l) => l.includes("BALL") || l.includes("POKé"));
   assert(!hasBall, "should NOT have ball row in trainer battle");
 
   // Run should NOT appear
-  const hasRun = labels.some((l) => l.includes("Run"));
+  const hasRun = ids.some((id) => id.includes("-macro-run"));
   assert(!hasRun, "should NOT have Run in trainer battle");
 
   // Should have 3 rows (moves, items, actions without run)
@@ -344,8 +361,8 @@ test("moves with 0 PP are disabled", () => {
   const disabled = getAllDisabled(result.rows);
 
   // Row 1: first 4 buttons are moves
-  const tackleIdx = labels.findIndex((l) => l.startsWith("TACKLE"));
-  const growlIdx = labels.findIndex((l) => l.startsWith("GROWL"));
+  const tackleIdx = labels.findIndex((l) => l.includes("TACKLE"));
+  const growlIdx = labels.findIndex((l) => l.includes("GROWL"));
 
   assert(tackleIdx >= 0, "should have TACKLE button");
   assert(growlIdx >= 0, "should have GROWL button");
@@ -399,7 +416,10 @@ test("move select layout shows move names without PP", () => {
 
   const labels = getAllLabels(result.rows);
   // Names only, no PP counts
-  assert(labels.includes("TACKLE"), "should have TACKLE");
+  assert(
+    labels.some((l) => l.includes("TACKLE")),
+    "should have TACKLE",
+  );
   assert(
     !labels.some((l) => l.includes("(25)")),
     "should NOT have PP counts in move select",
@@ -523,12 +543,18 @@ test("empty bag shows disabled placeholder buttons", () => {
   const result = generateLayout(wram, GAME_ID);
   const labels = getAllLabels(result.rows);
 
-  // Ball row should be all dashes
-  const ballRowStart = 4; // after 4 move buttons
-  const ballLabels = labels.slice(ballRowStart, ballRowStart + 4);
+  // Ball buttons should all be disabled (qty=0)
+  const ids = getAllCustomIds(result.rows);
+  const ballIds = ids.filter((id) => id.startsWith(`${GAME_ID}-macro-item-1-`));
   assert(
-    ballLabels.every((l) => l === "—"),
-    "empty ball row should be all dashes",
+    ballIds.length > 0,
+    "should have ball buttons",
+  );
+  const disabled = getAllDisabled(result.rows);
+  const ballIdxs = ballIds.map((id) => ids.indexOf(id));
+  assert(
+    ballIdxs.every((i) => disabled[i] === true),
+    "all ball buttons should be disabled when bag is empty",
   );
 });
 

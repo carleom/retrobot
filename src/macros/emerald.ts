@@ -157,6 +157,24 @@ export function navigateToPartyMacro(): Macro {
   ];
 }
 
+/** Navigate from FIGHT menu to party screen and select a party slot. */
+export function switchPokemonMacro(partySlot: number): Macro {
+  if (partySlot < 0 || partySlot > 5) {
+    throw new Error(`Invalid party slot: ${partySlot}. Must be 0-5.`);
+  }
+  const steps: MacroStep[] = [...navigateToPartyMacro()];
+  for (let i = 0; i < partySlot; i++) {
+    steps.push({ ...DOWN }, { ...idle(4) });
+  }
+  steps.push(
+    { ...A, updateButtons: true },
+    { ...idle(4) },
+    { ...A },
+    { ...idle(30) },
+  );
+  return steps;
+}
+
 /** Select and confirm a party slot (assumes party screen is already open). */
 export function selectPartySlotMacro(partySlot: number): Macro {
   if (partySlot < 0 || partySlot > 5) {

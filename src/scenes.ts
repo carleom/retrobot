@@ -126,4 +126,5 @@ export const BattleTypeFlag = {
   BATTLE_TYPE_DOUBLE: 1 << 0,
   BATTLE_TYPE_TRAINER: 1 << 3,
   BATTLE_TYPE_SAFARI: 1 << 7,
+  BATTLE_TYPE_IS_MASTER: 1 << 2, // always set in non-link battles
 } as const;
