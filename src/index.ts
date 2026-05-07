@@ -951,12 +951,23 @@ const main = async () => {
                     av_info: {},
                   };
 
-                  // In double battles, battler 2's controller may not be ready yet
-                  // (gActiveBattler can be 4 during transition). Wait for it.
-                  if (preWram[0x02022fec - 0x02000000] & 1) { // isDoubleBattle
+                  // In double battles, wait until battler 2's exec flag is set,
+                  // meaning the controller is active and ready for input.
+                  // Without this, button presses fall on deaf ears during
+                  // B_ACTION_EXEC_SCRIPT (actionFunc=11).
+                  const isDouble = (preWram[0x02022fec - 0x02000000] & 1) !== 0;
+                  if (isDouble) {
                     const comm2 = preWram[0x02024332 + 2 - 0x02000000];
-                    if (comm2 === 1) { // STATE_WAIT_ACTION_CHOSEN — waiting for input
-                      ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
+                    if (comm2 === 1) { // STATE_WAIT_ACTION_CHOSEN — battler 2 waiting
+                      // Poll gBattleControllerExecFlags (0x02024068) for bit 2
+                      for (let poll = 0; poll < 60; poll++) {
+                        ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+                        const execFlags = ctx.wram[0x02024068 - 0x02000000];
+                        if (execFlags & 4) { // bit 2 = battler 2 active
+                          console.log("[dbg] battler 2 controller active after " + poll + " polls");
+                          break;
+                        }
+                      }
                     }
                   }
 

@@ -101,6 +101,7 @@ export class EmeraldSceneDetector implements SceneDetector {
         "," + readU8(wram, ADDR.gChosenActionByBattler + 1) +
         "," + readU8(wram, ADDR.gChosenActionByBattler + 2) +
         "," + readU8(wram, ADDR.gChosenActionByBattler + 3) + "]" +
+        " execFlags=0x" + readU8(wram, 0x02024068).toString(16) +
         " bufCmd[0]=0x" + bufferCmdPlayer.toString(16) +
         " bufCmd[" + activeBattler + "]=0x" + bufferCmd.toString(16),
       );
