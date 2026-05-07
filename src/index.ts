@@ -84,6 +84,7 @@ import { Frame } from "./worker";
 import { handleBattleItem } from "./handlers/battleItem";
 import { handleOverworldBagUse } from "./handlers/overworldBag";
 import { buildMultiplierRows, multiplierButton } from "./handlers/components";
+import { readCurrentState } from "./handlers/readCurrentState";
 import encode from "image-encode";
 import { arraysEqual, rgb565toRaw } from "./util";
 import * as tmp from "tmp";
@@ -103,137 +104,6 @@ const pool = new Piscina({
   execArgv: ["-r", "ts-node/register"],
   ...(MAX_WORKERS == -1 ? {} : { maxThreads: MAX_WORKERS }),
 });
-
-/** Encode macro frames to GIF/MP4. Simplified from emulate.ts. */
-const encodeMacroRecording = async (
-  frames: Frame[],
-  coreType: CoreType,
-): Promise<{ recording: Buffer; recordingName: string }> => {
-  const importantFrames: (Frame & { renderTime: number })[] = [];
-  let lastFrame: Frame | undefined;
-  let durationSinceFrame = 0;
-  for (let i = 0; i < frames.length; i++) {
-    if (i === 0 || durationSinceFrame >= 60 / RECORDING_FRAMERATE) {
-      if (!arraysEqual(frames[i].buffer, lastFrame?.buffer)) {
-        importantFrames.push({ ...frames[i], renderTime: i });
-        lastFrame = frames[i];
-        durationSinceFrame = 0;
-      }
-    } else {
-      durationSinceFrame++;
-    }
-  }
-  if (lastFrame && !arraysEqual(last(frames)?.buffer, lastFrame?.buffer)) {
-    importantFrames.push({ ...last(frames)!, renderTime: frames.length });
-  }
-  if (importantFrames.length === 0) throw new Error("No frames");
-  const tmpFrameDir = tmp.dirSync({ unsafeCleanup: true });
-  const { width, height } = last(importantFrames)!;
-  const images = await Promise.all(
-    importantFrames.map((frame) => {
-      const file = path.join(
-        tmpFrameDir.name,
-        "frame-" + frame.renderTime + ".bmp",
-      );
-      return new Promise<{ file: string; frameNumber: number }>((res, rej) =>
-        fs.writeFile(
-          file,
-          Buffer.from(encode(rgb565toRaw(frame), [width, height], "bmp")),
-          (err) => {
-            if (err) rej(err);
-            else res({ file, frameNumber: frame.renderTime });
-          },
-        ),
-      );
-    }),
-  );
-  let framesTxt = "";
-  for (let i = 0; i < images.length; i++) {
-    framesTxt += "file '" + images[i].file + "'\n";
-    const next = images[i + 1];
-    if (next)
-      framesTxt +=
-        "duration " + (next.frameNumber - images[i].frameNumber) / 60 + "\n";
-  }
-  framesTxt +=
-    "duration " +
-    1 / 60 +
-    "\nfile '" +
-    last(images)!.file +
-    "'\nduration 5\nfile '" +
-    last(images)!.file +
-    "'\n";
-  const tmpFramesList = tmp.fileSync({ discardDescriptor: true });
-  fs.writeFileSync(tmpFramesList.name, framesTxt);
-  const { name: outputName } = tmp.fileSync();
-  const gifOutput = outputName + ".gif";
-  const mp4Output = outputName + ".mp4";
-  let output = gifOutput;
-  await new Promise<void>((res, rej) =>
-    ffmpeg()
-      .input(tmpFramesList.name)
-      .addInputOption("-safe", "0")
-      .inputFormat("concat")
-      .addOption(
-        "-filter_complex",
-        "scale=2*iw:2*ih:flags=neighbor,split=2 [a][b]; [a] palettegen= [pal]; [b] fifo [b]; [b] [pal] paletteuse=dither=bayer:bayer_scale=5",
-      )
-      .output(gifOutput)
-      .on("error", (err: any, stdout: any, stderr: any) => {
-        console.error(stderr);
-        rej(err);
-      })
-      .on("end", res)
-      .run(),
-  );
-  if (fs.statSync(gifOutput).size > 8 * 1024 * 1024) {
-    output = mp4Output;
-    await new Promise<void>((res, rej) =>
-      ffmpeg()
-        .input(gifOutput)
-        .output(mp4Output)
-        .on("error", (err: any, stdout: any, stderr: any) => {
-          console.error(stderr);
-          rej(err);
-        })
-        .on("end", res)
-        .run(),
-    );
-  }
-  const recordingBuffer = fs.readFileSync(output);
-  shelljs.rm("-rf", gifOutput);
-  shelljs.rm("-rf", mp4Output);
-  tmpFrameDir.removeCallback();
-  tmpFramesList.removeCallback();
-  return { recording: recordingBuffer, recordingName: path.basename(output) };
-};
-
-/** Load current game state + WRAM in a single call. Used by all macro/layout handlers. */
-async function readCurrentState(id: string, info: GameInfo): Promise<{
-  stateBytes: Uint8Array;
-  gameBytes: Uint8Array;
-  wram: Uint8Array;
-}> {
-  const gameBytes = new Uint8Array(
-    fs.readFileSync(path.resolve("data", id, info.game)),
-  );
-  const stateBytes = new Uint8Array(
-    fs.readFileSync(path.resolve("data", id, "state.sav")),
-  );
-  const { wram } = await emulateParallel(
-    pool,
-    {
-      coreType: info.coreType,
-      game: gameBytes,
-      state: stateBytes,
-      frames: [],
-      gameHash: undefined,
-      stateHash: undefined,
-    },
-    { input: {}, duration: 1 },
-  );
-  return { stateBytes, gameBytes, wram };
-}
 
 const main = async () => {
   const client = new Client({
@@ -569,7 +439,7 @@ const main = async () => {
               try {
                 // Multiplier change: re-read WRAM and regenerate layout
                 if (isNumeric(button)) {
-                  const { wram } = await readCurrentState(id, info);
+                  const { wram } = await readCurrentState(pool, id, info);
                   const { rows } = generateLayout(wram, id, parseInt(button));
                   const mRows = buildMultiplierRows(
                     id,
@@ -615,7 +485,7 @@ const main = async () => {
 
                   // Show party switch list (no game navigation, just read RAM)
                   if (rest === "macro-switch") {
-                    const { wram: swWram } = await readCurrentState(id, info);
+                    const { wram: swWram } = await readCurrentState(pool, id, info);
                     const swRows = buildPkmnSwitch(swWram, id);
                     await message.edit({ components: swRows as any });
                     await interaction.update({});
@@ -624,7 +494,7 @@ const main = async () => {
 
                   // Show overworld bag (potion list)
                   if (rest === "macro-bag") {
-                    const { wram: bagWram } = await readCurrentState(id, info);
+                    const { wram: bagWram } = await readCurrentState(pool, id, info);
                     const bagRows = buildOverworldBag(bagWram, id);
                     await message.edit({ components: bagRows as any });
                     await interaction.update({});
@@ -634,7 +504,7 @@ const main = async () => {
                   // Overworld bag: show party Pokémon to heal
                   if (parts[1] === "macro" && parts[2] === "bag" && parts[3] === "item") {
                     const itemId = parseInt(parts[4]);
-                    const { wram: tgtWram } = await readCurrentState(id, info);
+                    const { wram: tgtWram } = await readCurrentState(pool, id, info);
                     const tgtRows = buildOverworldBagTarget(tgtWram, id, itemId);
                     await message.edit({ components: tgtRows as any });
                     await interaction.update({});
@@ -1033,7 +903,7 @@ const main = async () => {
                     return;
                   }
 
-                  const { stateBytes, gameBytes } = await readCurrentState(id, info);
+                  const { stateBytes, gameBytes } = await readCurrentState(pool, id, info);
                   const ctx: MacroContext = {
                     coreType: info.coreType,
                     game: gameBytes,
