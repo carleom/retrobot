@@ -91,6 +91,8 @@ export class EmeraldSceneDetector implements SceneDetector {
       console.log(
         "[dbg] double playerBattler=" + playerBattler +
         " active=" + activeBattler +
+        " battlersCount=" + readU8(wram, 0x0202406c) +
+        " actionFunc=" + readU8(wram, 0x02024083) +
         " comm=[" + readU8(wram, ADDR.gBattleCommunication) +
         "," + readU8(wram, ADDR.gBattleCommunication + 1) +
         "," + readU8(wram, ADDR.gBattleCommunication + 2) +
