@@ -376,7 +376,6 @@ export function generateLayout(
     case Scene.BATTLE_MOVE_TARGET:
       return { rows: buildMoveTarget(wram, gameId), scene };
     case Scene.BATTLE_YESNO:
-      console.log("[layout] BATTLE_YESNO — returning Yes/No buttons");
       return { rows: buildYesNo(gameId), scene };
     case Scene.OVERWORLD:
     case Scene.TEXTBOX:

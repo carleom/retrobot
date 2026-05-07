@@ -71,34 +71,39 @@ export class EmeraldSceneDetector implements SceneDetector {
     }
 
     // In battle — read the action selection state machine
+    // Always use battler 0 for the player's commState. gActiveBattler can be
+    // non-zero during opponent turn / switch-in, but the player's scene is
+    // determined by battler 0's state.
     const activeBattler = readU8(wram, ADDR.gActiveBattler);
-    const commState = readU8(wram, ADDR.gBattleCommunication + activeBattler);
-    const chosenAction = readU8(
-      wram,
-      ADDR.gChosenActionByBattler + activeBattler,
-    );
+    const commState = readU8(wram, ADDR.gBattleCommunication); // index 0
+    const chosenAction = readU8(wram, ADDR.gChosenActionByBattler); // index 0
 
     // Check for controller-driven UI states (reliable regardless of commState).
     // These cover both voluntary and forced scenarios (e.g. faint replacement).
     const bufferCmd = readU8(wram, ADDR.gBattleBufferA);
     if (bufferCmd === CONTROLLER_YESNOBOX) {
-      console.log("[detect] YESNOBOX via bufferCmd=0x05");
       return Scene.BATTLE_YESNO;
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
       return Scene.BATTLE_PKMN_SWITCH;
     }
 
-    // Debug: log buffer command and comm state for battle scenes
-    if (battleTypeFlags !== 0) {
-      console.log(
-        "[detect] activeBattler=" + activeBattler +
-        " comm[0]=" + readU8(wram, ADDR.gBattleCommunication) +
-        " comm[1]=" + readU8(wram, ADDR.gBattleCommunication + 1) +
-        " chosenAction[0]=" + readU8(wram, ADDR.gChosenActionByBattler) +
-        " bufferCmd[0]=0x" + bufferCmd.toString(16).padStart(2, "0") +
-        " BG0_Y=" + readU8(wram, 0x02022e16) + (readU8(wram, 0x02022e17) << 8),
-      );
+    // Check if the old-style yesnobox (Cmd_yesnobox in battle script) has
+    // overwritten gBattleCommunication[0] = 1. This looks like
+    // STATE_WAIT_ACTION_CHOSEN but the sub-menu determined by chosenAction
+    // isn't actually active (buffer doesn't have the expected controller cmd).
+    if (commState === BattleCommState.STATE_WAIT_ACTION_CHOSEN
+        && chosenAction === ChosenAction.B_ACTION_USE_MOVE
+        && activeBattler !== 0
+        && bufferCmd !== 0
+        && bufferCmd !== 0x04 // CONTROLLER_CHOOSEACTION
+        && bufferCmd !== 0x06) { // CONTROLLER_CHOOSEMOVE
+      // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
+      const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
+      if (comm1 === 0 || comm1 === 1) {
+        console.log("[detect] old yesnobox → BATTLE_YESNO");
+        return Scene.BATTLE_YESNO;
+      }
     }
 
     switch (commState) {

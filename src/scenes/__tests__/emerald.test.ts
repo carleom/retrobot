@@ -334,25 +334,25 @@ test("Unexpected action value → UNKNOWN", () => {
 
 // ── Different active battler ─────────────────────────────────────────────────
 
-test("Active battler = 1 reads correct offset", () => {
+test("Always reads battler 0 regardless of gActiveBattler", () => {
   const wram = createWram();
   writeU32(wram, ADDR.gBattleTypeFlags, 1);
-  writeU8(wram, ADDR.gActiveBattler, 1); // battler 1 is active
-  // Set up battler 1's state
+  writeU8(wram, ADDR.gActiveBattler, 2); // irrelevant — always use battler 0
+  // Set battler 0's state
   writeU8(
     wram,
-    ADDR.gBattleCommunication + 1,
+    ADDR.gBattleCommunication,
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(
     wram,
-    ADDR.gChosenActionByBattler + 1,
+    ADDR.gChosenActionByBattler,
     ChosenAction.B_ACTION_USE_MOVE,
   );
-  // Put noise in battler 0's slots to confirm we're not reading those
-  writeU8(wram, ADDR.gBattleCommunication, 0xff);
-  writeU8(wram, ADDR.gChosenActionByBattler, 0xff);
-
+  // Put noise in battler 2's slots to confirm we ignore them
+  writeU8(wram, ADDR.gBattleCommunication + 2, 0xff);
+  writeU8(wram, ADDR.gChosenActionByBattler + 2, 0xff);
+  // bufferCmd is 0 but activeBattler=2 so old yesnobox check doesn't fire
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
