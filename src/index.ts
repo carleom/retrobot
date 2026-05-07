@@ -941,15 +941,25 @@ const main = async () => {
                     return;
                   }
 
-                  const { stateBytes, gameBytes } = await readCurrentState(pool, id, info);
-                  const ctx: MacroContext = {
+                  const { stateBytes, gameBytes, wram: preWram } = await readCurrentState(pool, id, info);
+                  let ctx: MacroContext = {
                     coreType: info.coreType,
                     game: gameBytes,
                     state: stateBytes,
                     frames: [],
-                    wram: new Uint8Array(0),
+                    wram: preWram,
                     av_info: {},
                   };
+
+                  // In double battles, battler 2's controller may not be ready yet
+                  // (gActiveBattler can be 4 during transition). Wait for it.
+                  if (preWram[0x02022fec - 0x02000000] & 1) { // isDoubleBattle
+                    const comm2 = preWram[0x02024332 + 2 - 0x02000000];
+                    if (comm2 === 1) { // STATE_WAIT_ACTION_CHOSEN — waiting for input
+                      ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
+                    }
+                  }
+
                   const macroResult = await executeMacro(pool, ctx, macro);
 
                   // Use the existing autoplay system to advance through battle text/animations
