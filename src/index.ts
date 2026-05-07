@@ -1003,6 +1003,21 @@ const main = async () => {
                     path.resolve("data", id, "state.sav"),
                     finalState,
                   );
+
+                  // Log what the layout generator sees (post-autoplay WRAM)
+                  console.log(
+                    "[dbg] post-autoplay comm=[" +
+                    finalWram[0x02024332 - 0x02000000] + "," +
+                    finalWram[0x02024332 + 1 - 0x02000000] + "," +
+                    finalWram[0x02024332 + 2 - 0x02000000] + "," +
+                    finalWram[0x02024332 + 3 - 0x02000000] + "]" +
+                    " act=[" +
+                    finalWram[0x0202421c - 0x02000000] + "," +
+                    finalWram[0x0202421c + 1 - 0x02000000] + "," +
+                    finalWram[0x0202421c + 2 - 0x02000000] + "," +
+                    finalWram[0x0202421c + 3 - 0x02000000] + "]",
+                  );
+
                   const { rows: macRows, scene: macScene } = generateLayout(
                     finalWram,
                     id,
