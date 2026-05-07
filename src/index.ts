@@ -233,6 +233,33 @@ const encodeMacroRecording = async (
   return { recording: recordingBuffer, recordingName: path.basename(output) };
 };
 
+/** Load current game state + WRAM in a single call. Used by all macro/layout handlers. */
+async function readCurrentState(id: string, info: GameInfo): Promise<{
+  stateBytes: Uint8Array;
+  gameBytes: Uint8Array;
+  wram: Uint8Array;
+}> {
+  const gameBytes = new Uint8Array(
+    fs.readFileSync(path.resolve("data", id, info.game)),
+  );
+  const stateBytes = new Uint8Array(
+    fs.readFileSync(path.resolve("data", id, "state.sav")),
+  );
+  const { wram } = await emulateParallel(
+    pool,
+    {
+      coreType: info.coreType,
+      game: gameBytes,
+      state: stateBytes,
+      frames: [],
+      gameHash: undefined,
+      stateHash: undefined,
+    },
+    { input: {}, duration: 1 },
+  );
+  return { stateBytes, gameBytes, wram };
+}
+
 const main = async () => {
   const client = new Client({
     intents: [
@@ -567,24 +594,7 @@ const main = async () => {
               try {
                 // Multiplier change: re-read WRAM and regenerate layout
                 if (isNumeric(button)) {
-                  const gameBytes = new Uint8Array(
-                    fs.readFileSync(path.resolve("data", id, info.game)),
-                  );
-                  const stateBytes = new Uint8Array(
-                    fs.readFileSync(path.resolve("data", id, "state.sav")),
-                  );
-                  const { wram } = await emulateParallel(
-                    pool,
-                    {
-                      coreType: info.coreType,
-                      game: gameBytes,
-                      state: stateBytes,
-                      frames: [],
-                      gameHash: undefined,
-                      stateHash: undefined,
-                    },
-                    { input: {}, duration: 1 },
-                  );
+                  const { wram } = await readCurrentState(id, info);
                   const { rows } = generateLayout(wram, id, parseInt(button));
                   const mRows = buildMultiplierRows(
                     id,
@@ -630,24 +640,7 @@ const main = async () => {
 
                   // Show party switch list (no game navigation, just read RAM)
                   if (rest === "macro-switch") {
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
-                    const { wram: swWram } = await emulateParallel(
-                      pool,
-                      {
-                        coreType: info.coreType,
-                        game: gameBytes,
-                        state: stateBytes,
-                        frames: [],
-                        gameHash: undefined,
-                        stateHash: undefined,
-                      },
-                      { input: {}, duration: 1 },
-                    );
+                    const { wram: swWram } = await readCurrentState(id, info);
                     const swRows = buildPkmnSwitch(swWram, id);
                     await message.edit({ components: swRows as any });
                     await interaction.update({});
@@ -656,24 +649,7 @@ const main = async () => {
 
                   // Show overworld bag (potion list)
                   if (rest === "macro-bag") {
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
-                    const { wram: bagWram } = await emulateParallel(
-                      pool,
-                      {
-                        coreType: info.coreType,
-                        game: gameBytes,
-                        state: stateBytes,
-                        frames: [],
-                        gameHash: undefined,
-                        stateHash: undefined,
-                      },
-                      { input: {}, duration: 1 },
-                    );
+                    const { wram: bagWram } = await readCurrentState(id, info);
                     const bagRows = buildOverworldBag(bagWram, id);
                     await message.edit({ components: bagRows as any });
                     await interaction.update({});
@@ -683,24 +659,7 @@ const main = async () => {
                   // Overworld bag: show party Pokémon to heal
                   if (parts[1] === "macro" && parts[2] === "bag" && parts[3] === "item") {
                     const itemId = parseInt(parts[4]);
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
-                    const { wram: tgtWram } = await emulateParallel(
-                      pool,
-                      {
-                        coreType: info.coreType,
-                        game: gameBytes,
-                        state: stateBytes,
-                        frames: [],
-                        gameHash: undefined,
-                        stateHash: undefined,
-                      },
-                      { input: {}, duration: 1 },
-                    );
+                    const { wram: tgtWram } = await readCurrentState(id, info);
                     const tgtRows = buildOverworldBagTarget(tgtWram, id, itemId);
                     await message.edit({ components: tgtRows as any });
                     await interaction.update({});
@@ -714,12 +673,7 @@ const main = async () => {
                     await interaction.deferUpdate();
                     message.channel.sendTyping();
 
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
+                    const { stateBytes, gameBytes } = await readCurrentState(id, info);
                     let ctx: MacroContext = {
                       coreType: info.coreType,
                       game: gameBytes,
@@ -854,12 +808,7 @@ const main = async () => {
                     const openSteps: MacroStep[] = [
                       ...useItemMacro(0).slice(0, 12), // resetToFight + RIGHT + A + idle(300)
                     ];
-                    const stateBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, "state.sav")),
-                    );
-                    const gameBytes = new Uint8Array(
-                      fs.readFileSync(path.resolve("data", id, info.game)),
-                    );
+                    const { stateBytes, gameBytes } = await readCurrentState(id, info);
                     let bagCtx: MacroContext = {
                       coreType: info.coreType,
                       game: gameBytes,
@@ -1415,12 +1364,7 @@ const main = async () => {
                     return;
                   }
 
-                  const gameBytes = new Uint8Array(
-                    fs.readFileSync(path.resolve("data", id, info.game)),
-                  );
-                  const stateBytes = new Uint8Array(
-                    fs.readFileSync(path.resolve("data", id, "state.sav")),
-                  );
+                  const { stateBytes, gameBytes } = await readCurrentState(id, info);
                   const ctx: MacroContext = {
                     coreType: info.coreType,
                     game: gameBytes,
