@@ -62,11 +62,23 @@ export class EmeraldSceneDetector implements SceneDetector {
     }
 
     // ── Read player battler state ─────────────────────────────────────────
-    // Always use battler 0 for the player's commState and chosenAction.
-    // (Double battles: battler 2's state is at index 2 — not yet handled.)
-    const commState = readU8(wram, ADDR.gBattleCommunication); // index 0
-    const chosenAction = readU8(wram, ADDR.gChosenActionByBattler); // index 0
+    // Single battles: player is battler 0.
+    // Double battles: player has battlers 0 and 2. Determine which one is
+    // currently selecting an action by checking their comm states.
     const activeBattler = readU8(wram, ADDR.gActiveBattler);
+    let playerBattler = 0;
+    if ((battleTypeFlags & 1) !== 0) { // BATTLE_TYPE_DOUBLE
+      const comm0 = readU8(wram, ADDR.gBattleCommunication);
+      const comm2 = readU8(wram, ADDR.gBattleCommunication + 2);
+      // Battler 0 is done choosing (CASE_CHOSEN or higher) and battler 2 is
+      // still choosing (BEFORE_ACTION_CHOSEN or WAIT_ACTION_CHOSEN) → use 2.
+      if (comm0 >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN
+          && comm2 <= BattleCommState.STATE_WAIT_ACTION_CHOSEN) {
+        playerBattler = 2;
+      }
+    }
+    const commState = readU8(wram, ADDR.gBattleCommunication + playerBattler);
+    const chosenAction = readU8(wram, ADDR.gChosenActionByBattler + playerBattler);
 
     // Buffer command at the active battler's index
     const bufferCmd = readU8(wram, ADDR.gBattleBufferA + activeBattler * 0x200);
@@ -77,7 +89,8 @@ export class EmeraldSceneDetector implements SceneDetector {
     const isDouble = (battleTypeFlags & 1) !== 0;
     if (isDouble) {
       console.log(
-        "[dbg] double active=" + activeBattler +
+        "[dbg] double playerBattler=" + playerBattler +
+        " active=" + activeBattler +
         " comm=[" + readU8(wram, ADDR.gBattleCommunication) +
         "," + readU8(wram, ADDR.gBattleCommunication + 1) +
         "," + readU8(wram, ADDR.gBattleCommunication + 2) +
@@ -107,9 +120,10 @@ export class EmeraldSceneDetector implements SceneDetector {
     // The old mechanism overwrites gBattleCommunication[0] = 1, which looks
     // like STATE_WAIT_ACTION_CHOSEN. Distinguish by checking that the
     // player's buffer does NOT have a real sub-menu controller command.
+    // Uses hardcoded index 0 — Cmd_yesnobox always writes to [0] and [1].
 
-    if (commState === BattleCommState.STATE_WAIT_ACTION_CHOSEN
-        && chosenAction === ChosenAction.B_ACTION_USE_MOVE
+    if (readU8(wram, ADDR.gBattleCommunication) === BattleCommState.STATE_WAIT_ACTION_CHOSEN
+        && readU8(wram, ADDR.gChosenActionByBattler) === ChosenAction.B_ACTION_USE_MOVE
         && activeBattler !== 0
         && bufferCmdPlayer !== 0
         && bufferCmdPlayer !== 0x04 // CONTROLLER_CHOOSEACTION
