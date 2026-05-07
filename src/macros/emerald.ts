@@ -228,6 +228,18 @@ export function backMacro(): Macro {
   return [{ ...B }, { ...idle(12) }];
 }
 
+// ── Yes/No Macros (switch prompt, learn move, nickname, etc.) ────────────────
+
+/** Answer "Yes" to a Yes/No prompt (cursor defaults to Yes). */
+export function yesMacro(): Macro {
+  return [{ ...A }, { ...idle(12) }];
+}
+
+/** Answer "No" to a Yes/No prompt (DOWN to move cursor, then A). */
+export function noMacro(): Macro {
+  return [{ ...DOWN }, { ...idle(4) }, { ...A }, { ...idle(12) }];
+}
+
 // ── Overworld Switch Macro ──────────────────────────────────────────────────
 
 /**

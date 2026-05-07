@@ -29,6 +29,9 @@ export enum Scene {
   /** Battle: move target selection (double battles — pick which enemy to hit). */
   BATTLE_MOVE_TARGET = "BATTLE_MOVE_TARGET",
 
+  /** Battle: Yes/No prompt (switch prompt, learn move, nickname, etc.). */
+  BATTLE_YESNO = "BATTLE_YESNO",
+
   /** Could not determine the scene. Fall back to raw controls. */
   UNKNOWN = "UNKNOWN",
 }

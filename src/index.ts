@@ -73,6 +73,8 @@ import {
   prevTargetMacro,
   nextTargetMacro,
   cancelTargetMacro,
+  yesMacro,
+  noMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
 import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
@@ -1199,6 +1201,12 @@ const main = async () => {
                   } else if (parts[2] === "run") {
                     macro = runMacro();
                     macroLabel = "Run";
+                  } else if (parts[2] === "yes") {
+                    macro = yesMacro();
+                    macroLabel = "Yes";
+                  } else if (parts[2] === "no") {
+                    macro = noMacro();
+                    macroLabel = "No";
                   } else {
                     await interaction.update({});
                     return;

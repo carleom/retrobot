@@ -25,10 +25,14 @@ import {
 /** Absolute GBA addresses for scene detection symbols in Pokémon Emerald (USA). */
 const ADDR = {
   gBattleTypeFlags: 0x02022fec,
+  gBattleBufferA: 0x02023064, // u8[MAX_BATTLERS][0x200], [0][0] = command byte
   gActiveBattler: 0x02024064,
   gChosenActionByBattler: 0x0202421c,
   gBattleCommunication: 0x02024332,
 } as const;
+
+/** Battle controller command: Yes/No box (switch prompt, learn move, etc.). */
+const CONTROLLER_YESNOBOX = 0x05;
 
 // ── Detector Implementation ──────────────────────────────────────────────────
 
@@ -74,9 +78,11 @@ export class EmeraldSceneDetector implements SceneDetector {
 
     switch (commState) {
       case BattleCommState.STATE_BEFORE_ACTION_CHOSEN:
+        // Check if a Yes/No box is active (switch prompt, learn move, etc.)
+        if (readU8(wram, ADDR.gBattleBufferA) === CONTROLLER_YESNOBOX) {
+          return Scene.BATTLE_YESNO;
+        }
         // Player is on the main action menu (FIGHT / BAG / PKMN / RUN).
-        // B_ACTION_NONE (0xFF) means fresh menu, no prior action.
-        // Any other value means we just returned from a sub-action.
         return Scene.BATTLE_FIGHT;
 
       case BattleCommState.STATE_WAIT_ACTION_CHOSEN:

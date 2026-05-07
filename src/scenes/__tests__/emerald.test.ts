@@ -160,6 +160,33 @@ test("STATE_WAIT_ACTION_CONFIRMED_STANDBY → BATTLE_FIGHT", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
+// ── BATTLE_YESNO ─────────────────────────────────────────────────────────────
+
+test("BEFORE_ACTION_CHOSEN + YESNOBOX → BATTLE_YESNO", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_BEFORE_ACTION_CHOSEN,
+  );
+  writeU8(wram, 0x02023064, 0x05); // CONTROLLER_YESNOBOX in gBattleBufferA[0][0]
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
+});
+
+test("BEFORE_ACTION_CHOSEN without YESNOBOX → BATTLE_FIGHT (not yesno)", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_BEFORE_ACTION_CHOSEN,
+  );
+  // gBattleBufferA[0][0] is 0 (default) — not CONTROLLER_YESNOBOX
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
+});
+
 // ── BATTLE_MOVE_SELECT ───────────────────────────────────────────────────────
 
 test("STATE_WAIT_ACTION_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {

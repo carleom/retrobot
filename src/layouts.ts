@@ -375,6 +375,8 @@ export function generateLayout(
       return { rows: buildPkmnSwitch(wram, gameId), scene };
     case Scene.BATTLE_MOVE_TARGET:
       return { rows: buildMoveTarget(wram, gameId), scene };
+    case Scene.BATTLE_YESNO:
+      return { rows: buildYesNo(gameId), scene };
     case Scene.OVERWORLD:
     case Scene.TEXTBOX:
     case Scene.UNKNOWN:
@@ -565,6 +567,18 @@ function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   );
 
   return rows;
+}
+
+// ── Yes/No Layout (switch prompt, learn move, nickname, etc.) ────────────────
+
+function buildYesNo(gameId: string): ActionRowBuilder[] {
+  return [
+    row(
+      btn(`${gameId}-macro-yes`, "✅ Yes", ButtonStyle.Success),
+      btn(`${gameId}-macro-no`, "❌ No", ButtonStyle.Danger),
+    ),
+    row(btn(`${gameId}-b-1`, "↩️ Cancel", ButtonStyle.Secondary)),
+  ];
 }
 
 // ── Bag Pocket Layout ────────────────────────────────────────────────────────
