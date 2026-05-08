@@ -162,6 +162,49 @@ function macroDebug(macro: Macro): string {
     .join(" ");
 }
 
+function isDoubleBattleWram(wram: Uint8Array): boolean {
+  return (wramU32(wram, 0x02022fec) & 1) !== 0;
+}
+
+function doubleBattleUiReady(wram: Uint8Array): boolean {
+  if (!isDoubleBattleWram(wram)) return true;
+  if (emeraldSceneDetector.hasMoveTargetCursor(wram)) return true;
+
+  const playerControllerCommands = [
+    wramU8(wram, 0x02023064),
+    wramU8(wram, 0x02023064 + 2 * 0x200),
+  ];
+
+  return playerControllerCommands.some(
+    (cmd) => cmd === 0x04 || cmd === 0x05 || cmd === 0x06 || cmd === 0x08,
+  );
+}
+
+async function waitForDoubleBattleUi(
+  ctx: MacroContext,
+  label: string,
+): Promise<MacroContext> {
+  let next = ctx;
+  for (let poll = 0; poll < 90; poll++) {
+    if (doubleBattleUiReady(next.wram)) {
+      console.log(
+        "[dbg-double-ready] label=" + label +
+          " poll=" + poll +
+          " ram={" + battleDebug(next.wram) + "}",
+      );
+      return next;
+    }
+
+    next = await emulateParallel(pool, next, { input: {}, duration: 4 });
+  }
+
+  console.log(
+    "[dbg-double-ready-timeout] label=" + label +
+      " ram={" + battleDebug(next.wram) + "}",
+  );
+  return next;
+}
+
 const pool = new Piscina({
   filename: path.resolve(__dirname, path.resolve(__dirname, "worker.ts")),
   name: "default",
@@ -586,8 +629,10 @@ const main = async () => {
                   message.channel.sendTyping();
                   let macro: Macro;
                   let macroLabel: string;
+                  let moveSlot: number | null = null;
 
                   if (parts[2] === "move") {
+                    moveSlot = parseInt(parts[3]);
                     // Use state tracker in doubles, scene detector otherwise
                     const { wram: mvWram } = await readCurrentState(pool, id, info);
                     const isDouble = (mvWram[0x02022fec - 0x02000000] & 1) !== 0;
@@ -601,11 +646,11 @@ const main = async () => {
                       atMoveList = emeraldSceneDetector.detect(mvWram) === Scene.BATTLE_MOVE_SELECT;
                     }
                     if (atMoveList) {
-                      macro = selectMoveFromListMacro(parseInt(parts[3]));
+                      macro = selectMoveFromListMacro(moveSlot);
                     } else {
-                      macro = selectMoveMacro(parseInt(parts[3]));
+                      macro = selectMoveMacro(moveSlot);
                     }
-                    macroLabel = "Move " + (parseInt(parts[3]) + 1);
+                    macroLabel = "Move " + (moveSlot + 1);
                     console.log(
                       "[dbg-move-click] game=" + id +
                         " slot=" + parts[3] +
@@ -1066,7 +1111,27 @@ const main = async () => {
                         " label=" + macroLabel +
                         " ram={" + battleDebug(preAutoplayWram) + "}",
                     );
+                    ctx = await waitForDoubleBattleUi(ctx, "before-macro " + macroLabel);
+                    if (moveSlot !== null) {
+                      const readyScene = emeraldSceneDetector.detect(ctx.wram);
+                      const readyAtMoveList = readyScene === Scene.BATTLE_MOVE_SELECT;
+                      macro = readyAtMoveList
+                        ? selectMoveFromListMacro(moveSlot)
+                        : selectMoveMacro(moveSlot);
+                      console.log(
+                        "[dbg-move-ready] game=" + id +
+                          " slot=" + moveSlot +
+                          " readyScene=" + readyScene +
+                          " macro=" + (readyAtMoveList ? "selectMoveFromListMacro" : "selectMoveMacro") +
+                          " ram={" + battleDebug(ctx.wram) + "}" +
+                          " steps=" + macroDebug(macro),
+                      );
+                    }
                     macroResult = await executeMacro(pool, ctx, macro);
+                    macroResult = await waitForDoubleBattleUi(
+                      macroResult,
+                      "after-macro " + macroLabel,
+                    );
                   } else {
                     macroResult = await executeMacro(pool, ctx, macro);
                   }
