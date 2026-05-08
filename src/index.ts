@@ -187,13 +187,21 @@ function isPendingDoubleTargetAfterMove(wram: Uint8Array): boolean {
   const comm0 = wramU8(wram, 0x02024332);
   const comm2 = wramU8(wram, 0x02024332 + 2);
   const act0 = wramU8(wram, 0x0202421c);
+  const act2 = wramU8(wram, 0x0202421c + 2);
   const buf2 = wramU8(wram, 0x02023064 + 2 * 0x200);
 
-  return act0 === 0
+  const battler0PendingTarget = act0 === 0
     && comm0 >= 2
     && comm2 <= 1
     && buf2 !== 0x04
     && buf2 !== 0x06;
+
+  const battler2PendingTarget = act2 === 0
+    && comm2 >= 2
+    && buf2 !== 0x04
+    && buf2 !== 0x06;
+
+  return battler0PendingTarget || battler2PendingTarget;
 }
 
 async function waitForDoubleBattleUi(
