@@ -1039,9 +1039,13 @@ const main = async () => {
                     } else if (targetAction === "1" || targetAction === "3") {
                       // Double battle: select specific enemy battler as target
                       const targetBattler = parseInt(targetAction);
-                      await interaction.deferUpdate();
                       message.channel.sendTyping();
                       const { stateBytes, gameBytes, wram: tgtWram } = await readCurrentState(pool, id, info);
+                      console.log(
+                        "[dbg-target-click] game=" + id +
+                          " target=" + targetBattler +
+                          " ram={" + battleDebug(tgtWram) + "}",
+                      );
                       // gMoveSelectionCursor[0] = current target position (0=battler1, 1=battler3)
                       const curCursor = readU8(tgtWram, 0x020244b0);
                       const desired = targetBattler === 1 ? 0 : 1;

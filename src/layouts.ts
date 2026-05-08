@@ -605,9 +605,9 @@ const BATTLEMON_BASE = 0x02024084; // gBattleMons
 export function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
 
-  // Read enemy battlers (1 and 3 in doubles) species names
+  // Read enemy battlers in on-screen order for Emerald doubles.
   const targetButtons: ButtonBuilder[] = [];
-  for (const battler of [1, 3]) {
+  for (const battler of [3, 1]) {
     const speciesAddr = BATTLEMON_BASE + battler * BATTLEMON_SIZE;
     const species = readU16(wram, speciesAddr);
     const name = speciesName(species);
