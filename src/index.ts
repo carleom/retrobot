@@ -1054,11 +1054,12 @@ const main = async () => {
                           " target=" + targetBattler +
                           " ram={" + battleDebug(tgtWram) + "}",
                       );
-                      // gMoveSelectionCursor[0] = current target position (0=battler1, 1=battler3)
-                      const curCursor = readU8(tgtWram, 0x020244b0);
-                      const desired = targetBattler === 1 ? 0 : 1;
                       const steps: MacroStep[] = [];
-                      if (curCursor !== desired) {
+                      // Emerald defaults selected-target moves to opponent-left
+                      // (battler 1). gMultiUsePlayerCursor is in IWRAM, so do
+                      // deterministic navigation from that default instead of
+                      // reading gMoveSelectionCursor, which is only the move slot.
+                      if (targetBattler === 3) {
                         steps.push({ input: { LEFT: true }, duration: 4 });
                         steps.push({ input: {}, duration: 6 });
                       }
