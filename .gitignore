@@ -17,3 +17,5 @@ decompiled/
 roms/
 docs/notes.md
 config/emoji_ids.json
+
+local-fixtures/
