@@ -70,10 +70,10 @@ export class EmeraldSceneDetector implements SceneDetector {
     if ((battleTypeFlags & 1) !== 0) { // BATTLE_TYPE_DOUBLE
       const comm0 = readU8(wram, ADDR.gBattleCommunication);
       const comm2 = readU8(wram, ADDR.gBattleCommunication + 2);
-      // Only switch to battler 2 if battler 0 has fully completed
-      // (CONFIRMED_STANDBY=3 or CONFIRMED=4). CASE_CHOSEN=2 means
-      // battler 0 is still picking a target.
-      if (comm0 >= BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY
+      // Switch to battler 2 as soon as battler 0 has chosen (comm >= 2) and
+      // battler 2 still needs to choose (comm <= 1). Battler 0's move list is
+      // still open, but the game is showing battler 2's FIGHT screen next.
+      if (comm0 >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN
           && comm2 <= BattleCommState.STATE_WAIT_ACTION_CHOSEN) {
         playerBattler = 2;
       }
