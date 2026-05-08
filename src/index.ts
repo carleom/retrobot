@@ -180,6 +180,22 @@ function doubleBattleUiReady(wram: Uint8Array): boolean {
   );
 }
 
+function isPendingDoubleTargetAfterMove(wram: Uint8Array): boolean {
+  if (!isDoubleBattleWram(wram)) return false;
+  if (emeraldSceneDetector.hasMoveTargetCursor(wram)) return true;
+
+  const comm0 = wramU8(wram, 0x02024332);
+  const comm2 = wramU8(wram, 0x02024332 + 2);
+  const act0 = wramU8(wram, 0x0202421c);
+  const buf2 = wramU8(wram, 0x02023064 + 2 * 0x200);
+
+  return act0 === 0
+    && comm0 >= 2
+    && comm2 <= 1
+    && buf2 !== 0x04
+    && buf2 !== 0x06;
+}
+
 async function waitForDoubleBattleUi(
   ctx: MacroContext,
   label: string,
@@ -1132,8 +1148,7 @@ const main = async () => {
                       macroResult,
                       "after-macro " + macroLabel,
                     );
-                    if (moveSlot !== null
-                        && emeraldSceneDetector.detect(macroResult.wram) === Scene.BATTLE_MOVE_TARGET) {
+                    if (moveSlot !== null && isPendingDoubleTargetAfterMove(macroResult.wram)) {
                       fs.writeFileSync(
                         path.resolve("data", id, "state.sav"),
                         macroResult.state,
