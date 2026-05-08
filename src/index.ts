@@ -54,6 +54,7 @@ import { MAX_WORKERS, RECORDING_FRAMERATE } from "./config";
 import {
   generateLayout,
   buildPkmnSwitch,
+  buildMoveTarget,
   buildOverworld,
   buildOverworldBag,
   buildOverworldBagTarget,
@@ -1014,25 +1015,28 @@ const main = async () => {
                     finalState,
                   );
 
-                  // Log what the layout generator sees (post-autoplay WRAM)
-                  console.log(
-                    "[dbg] post-autoplay comm=[" +
-                    finalWram[0x02024332 - 0x02000000] + "," +
-                    finalWram[0x02024332 + 1 - 0x02000000] + "," +
-                    finalWram[0x02024332 + 2 - 0x02000000] + "," +
-                    finalWram[0x02024332 + 3 - 0x02000000] + "]" +
-                    " act=[" +
-                    finalWram[0x0202421c - 0x02000000] + "," +
-                    finalWram[0x0202421c + 1 - 0x02000000] + "," +
-                    finalWram[0x0202421c + 2 - 0x02000000] + "," +
-                    finalWram[0x0202421c + 3 - 0x02000000] + "]",
-                  );
-
-                  const { rows: macRows, scene: macScene } = generateLayout(
-                    finalWram,
-                    id,
-                    1,
-                  );
+                  // In double battles, force target layout when both battlers
+                  // have chosen moves (comm >= 2). The scene detector can't
+                  // reliably distinguish this from the move select screen.
+                  let macRows: any[];
+                  let macScene: Scene;
+                  const isDoubleBattle = (finalWram[0x02022fec - 0x02000000] & 1) !== 0;
+                  if (isDoubleBattle) {
+                    const comm0 = finalWram[0x02024332 - 0x02000000];
+                    const comm2 = finalWram[0x02024332 + 2 - 0x02000000];
+                    if (comm0 >= 2 && comm2 >= 2) {
+                      macRows = buildMoveTarget(finalWram, id);
+                      macScene = Scene.BATTLE_MOVE_TARGET;
+                    } else {
+                      const layout = generateLayout(finalWram, id, 1);
+                      macRows = layout.rows;
+                      macScene = layout.scene;
+                    }
+                  } else {
+                    const layout = generateLayout(finalWram, id, 1);
+                    macRows = layout.rows;
+                    macScene = layout.scene;
+                  }
                   const macComponents =
                     macScene === Scene.OVERWORLD
                       ? [

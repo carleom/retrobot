@@ -602,7 +602,7 @@ function buildMoveSelect(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
 const BATTLEMON_SIZE = 0x58; // sizeof(struct BattlePokemon)
 const BATTLEMON_BASE = 0x02024084; // gBattleMons
 
-function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
+export function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
 
   // Read enemy battlers (1 and 3 in doubles) species names
