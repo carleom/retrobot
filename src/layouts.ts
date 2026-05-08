@@ -354,7 +354,7 @@ export function generateLayout(
   multiplier: number = 1,
 ): LayoutResult {
   _noneCounter = 0;
-  const scene = sceneDetector.detect(wram);
+  let scene = sceneDetector.detect(wram);
   const battleFlags = readU32(wram, 0x02022fec);
   const outcome = readU8(wram, 0x0202433a);
   const active = readU8(wram, 0x02024064);
@@ -373,6 +373,10 @@ export function generateLayout(
       " buf0=" + buf0 +
       " buf2=" + buf2,
   );
+
+  if (scene === Scene.UNKNOWN && battleFlags !== 0) {
+    scene = Scene.BATTLE_FIGHT;
+  }
 
   switch (scene) {
     case Scene.BATTLE_FIGHT:

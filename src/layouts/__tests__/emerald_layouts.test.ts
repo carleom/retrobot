@@ -346,6 +346,29 @@ test("trainer battle fight hides balls and run", () => {
   );
 });
 
+test("active transitional battle still shows move buttons", () => {
+  const wram = createWram();
+  writeU32(
+    wram,
+    ADDR.gBattleTypeFlags,
+    BattleTypeFlag.BATTLE_TYPE_DOUBLE |
+      BattleTypeFlag.BATTLE_TYPE_TRAINER |
+      BattleTypeFlag.BATTLE_TYPE_IS_MASTER,
+  );
+  writeU8(wram, ADDR.gActiveBattler, 4);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN);
+  writeU8(wram, ADDR.gBattleCommunication + 2, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, 0x02023064, 18);
+  writeU8(wram, 0x02023064 + 2 * 0x200, 50);
+  writePartyPokemon(wram, 0, 25, [33, 45, 98, 29], [35, 30, 20, 15], 50, 100);
+
+  const result = generateLayout(wram, GAME_ID);
+  const ids = getAllCustomIds(result.rows);
+
+  assert(result.scene !== Scene.OVERWORLD, "active battle should not show overworld layout");
+  assert(ids.some((id) => id.includes("-macro-move-")), "should show move buttons");
+});
+
 // ── 0 PP moves disabled ──────────────────────────────────────────────────────
 
 test("moves with 0 PP are disabled", () => {
