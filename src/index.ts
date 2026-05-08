@@ -1766,9 +1766,20 @@ const unlockGames = async (client: Client) => {
 
         if (info) {
           console.log(`unlocking ${info.game} in ${channel.name}`);
-          await message.edit({
-            components: buttons(info.coreType, id, 1, true, info.multipliers),
-          });
+          try {
+            const { wram } = await readCurrentState(pool, id, info);
+            const { rows, scene } = generateLayout(wram, id, 1);
+            await message.edit({
+              components: scene === Scene.OVERWORLD
+                ? [...rows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
+                : rows as any,
+            });
+          } catch (err) {
+            console.log("[dbg-unlock-layout-fallback] game=" + id, err);
+            await message.edit({
+              components: buttons(info.coreType, id, 1, true, info.multipliers),
+            });
+          }
         }
       }
     } catch (err) {

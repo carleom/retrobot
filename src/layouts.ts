@@ -355,6 +355,24 @@ export function generateLayout(
 ): LayoutResult {
   _noneCounter = 0;
   const scene = sceneDetector.detect(wram);
+  const battleFlags = readU32(wram, 0x02022fec);
+  const outcome = readU8(wram, 0x0202433a);
+  const active = readU8(wram, 0x02024064);
+  const comm0 = readU8(wram, 0x02024332);
+  const comm2 = readU8(wram, 0x02024332 + 2);
+  const buf0 = readU8(wram, 0x02023064);
+  const buf2 = readU8(wram, 0x02023064 + 2 * 0x200);
+  console.log(
+    "[dbg-layout] game=" + gameId +
+      " scene=" + scene +
+      " flags=0x" + battleFlags.toString(16) +
+      " outcome=" + outcome +
+      " active=" + active +
+      " comm0=" + comm0 +
+      " comm2=" + comm2 +
+      " buf0=" + buf0 +
+      " buf2=" + buf2,
+  );
 
   switch (scene) {
     case Scene.BATTLE_FIGHT:
