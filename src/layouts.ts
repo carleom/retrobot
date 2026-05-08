@@ -426,6 +426,11 @@ export function generateLayout(
     scene = Scene.BATTLE_FIGHT;
   }
 
+  // gBattleTypeFlags can be stale after a battle ends (gBattleOutcome != 0).
+  if (battleFlags !== 0 && outcome !== 0) {
+    scene = Scene.OVERWORLD;
+  }
+
   switch (scene) {
     case Scene.BATTLE_FIGHT:
       return { rows: buildBattleFight(wram, gameId, multiplier), scene };
