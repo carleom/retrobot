@@ -104,6 +104,64 @@ const COMPRESSED = ["zip", "tar.gz", "tar.bz2", "tar.xz", "bz2"];
 
 const ALL = [...NES, ...SNES, ...GB, ...GBA, ...COMPRESSED];
 
+const EWRAM_BASE = 0x02000000;
+
+function wramU8(wram: Uint8Array, addr: number): number {
+  const offset = addr - EWRAM_BASE;
+  return offset >= 0 && offset < wram.length ? wram[offset] : -1;
+}
+
+function wramU32(wram: Uint8Array, addr: number): number {
+  const offset = addr - EWRAM_BASE;
+  if (offset < 0 || offset + 3 >= wram.length) return 0xffffffff;
+  return (
+    wram[offset] |
+    (wram[offset + 1] << 8) |
+    (wram[offset + 2] << 16) |
+    (wram[offset + 3] << 24)
+  ) >>> 0;
+}
+
+function battleDebug(wram: Uint8Array): string {
+  if (wram.length === 0) return "wramLen=0";
+  const flags = wramU32(wram, 0x02022fec);
+  const active = wramU8(wram, 0x02024064);
+  const exec = wramU32(wram, 0x02024068);
+  const actionFunc = wramU8(wram, 0x02024083);
+  const comm = [0, 1, 2, 3].map((i) => wramU8(wram, 0x02024332 + i));
+  const act = [0, 1, 2, 3].map((i) => wramU8(wram, 0x0202421c + i));
+  const actionCursor = [0, 1, 2, 3].map((i) => wramU8(wram, 0x020244ac + i));
+  const moveCursor = [0, 1, 2, 3].map((i) => wramU8(wram, 0x020244b0 + i));
+  const buf = [0, 1, 2, 3].map((i) => wramU8(wram, 0x02023064 + i * 0x200));
+  let scene = "ERR";
+  let hasTarget = false;
+  try {
+    scene = emeraldSceneDetector.detect(wram);
+    hasTarget = emeraldSceneDetector.hasMoveTargetCursor(wram);
+  } catch (err: any) {
+    scene = "ERR:" + err.message;
+  }
+  return (
+    "scene=" + scene +
+    " flags=0x" + flags.toString(16) +
+    " active=" + active +
+    " exec=0x" + exec.toString(16) +
+    " actionFunc=" + actionFunc +
+    " comm=" + JSON.stringify(comm) +
+    " act=" + JSON.stringify(act) +
+    " actionCursor=" + JSON.stringify(actionCursor) +
+    " moveCursor=" + JSON.stringify(moveCursor) +
+    " buf=" + JSON.stringify(buf) +
+    " targetSprite=" + hasTarget
+  );
+}
+
+function macroDebug(macro: Macro): string {
+  return macro
+    .map((step, i) => i + ":" + JSON.stringify(step.input) + "/" + step.duration)
+    .join(" ");
+}
+
 const pool = new Piscina({
   filename: path.resolve(__dirname, path.resolve(__dirname, "worker.ts")),
   name: "default",
@@ -534,9 +592,11 @@ const main = async () => {
                     const { wram: mvWram } = await readCurrentState(pool, id, info);
                     const isDouble = (mvWram[0x02022fec - 0x02000000] & 1) !== 0;
                     let atMoveList = false;
+                    let doubleState = "none";
                     if (isDouble) {
                       const ds = getDoubleState(id, mvWram);
-                      atMoveList = ds.phase === "move";
+                      doubleState = ds ? "b" + ds.battler + ":" + ds.phase : "null";
+                      atMoveList = ds?.phase === "move";
                     } else {
                       atMoveList = emeraldSceneDetector.detect(mvWram) === Scene.BATTLE_MOVE_SELECT;
                     }
@@ -546,6 +606,16 @@ const main = async () => {
                       macro = selectMoveMacro(parseInt(parts[3]));
                     }
                     macroLabel = "Move " + (parseInt(parts[3]) + 1);
+                    console.log(
+                      "[dbg-move-click] game=" + id +
+                        " slot=" + parts[3] +
+                        " isDouble=" + isDouble +
+                        " doubleState=" + doubleState +
+                        " atMoveList=" + atMoveList +
+                        " macro=" + (atMoveList ? "selectMoveFromListMacro" : "selectMoveMacro") +
+                        " ram={" + battleDebug(mvWram) + "}" +
+                        " steps=" + macroDebug(macro),
+                    );
                   } else if (parts[2] === "item") {
                     handleBattleItem(pool, id, info, player, message, parseInt(parts[3]), parseInt(parts[4]));
                     return;
@@ -975,8 +1045,14 @@ const main = async () => {
                   // stops at the FIGHT screen, then the macro runs.
                   const isDouble = (preWram[0x02022fec - 0x02000000] & 1) !== 0;
                   let macroResult: MacroContext;
+                  console.log(
+                    "[dbg-macro-pre] game=" + id +
+                      " label=" + macroLabel +
+                      " isDouble=" + isDouble +
+                      " ram={" + battleDebug(preWram) + "}",
+                  );
                   if (isDouble) {
-                    const { state: preState } = await emulate(
+                    const { state: preState, wram: preAutoplayWram } = await emulate(
                       pool, info.coreType,
                       new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
                       ctx.state,
@@ -984,10 +1060,21 @@ const main = async () => {
                       [],
                     );
                     ctx.state = preState;
+                    ctx.wram = preAutoplayWram;
+                    console.log(
+                      "[dbg-macro-after-double-autoplay] game=" + id +
+                        " label=" + macroLabel +
+                        " ram={" + battleDebug(preAutoplayWram) + "}",
+                    );
                     macroResult = await executeMacro(pool, ctx, macro);
                   } else {
                     macroResult = await executeMacro(pool, ctx, macro);
                   }
+                  console.log(
+                    "[dbg-macro-after-execute] game=" + id +
+                      " label=" + macroLabel +
+                      " ram={" + battleDebug(macroResult.wram) + "}",
+                  );
 
                   // Use the existing autoplay system to advance through battle text/animations
                   const {
@@ -1012,6 +1099,11 @@ const main = async () => {
                   fs.writeFileSync(
                     path.resolve("data", id, "state.sav"),
                     finalState,
+                  );
+                  console.log(
+                    "[dbg-macro-final] game=" + id +
+                      " label=" + macroLabel +
+                      " ram={" + battleDebug(finalWram) + "}",
                   );
 
                   const { rows: macRows, scene: macScene } = generateLayout(
