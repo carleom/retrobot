@@ -354,15 +354,7 @@ export function generateLayout(
   multiplier: number = 1,
 ): LayoutResult {
   _noneCounter = 0;
-  let scene = sceneDetector.detect(wram);
-
-  // If battle has ended (gBattleOutcome != 0), force overworld
-  if (scene !== Scene.OVERWORLD) {
-    const outcome = readU8(wram, 0x0202433a);
-    if (outcome !== 0) {
-      scene = Scene.OVERWORLD;
-    }
-  }
+  const scene = sceneDetector.detect(wram);
 
   switch (scene) {
     case Scene.BATTLE_FIGHT:
