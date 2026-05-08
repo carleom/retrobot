@@ -94,6 +94,7 @@ function speciesName(id: number): string {
 // ── Memory Addresses ─────────────────────────────────────────────────────────
 
 const ADDR = {
+  gBattleMons: 0x02024084,
   gPlayerParty: 0x020244ec,
   gActiveBattler: 0x02024064,
   encryptionKey: 0x02024b00,
@@ -235,10 +236,39 @@ function getDisplayPlayerBattler(wram: Uint8Array): 0 | 2 {
   return 0;
 }
 
+function readBattlePokemon(wram: Uint8Array, battler: 0 | 2): PartyPokemon {
+  const base = ADDR.gBattleMons + battler * BATTLEMON_SIZE;
+  return {
+    species: readU16(wram, base + 0x00),
+    moves: [
+      readU16(wram, base + 0x0c),
+      readU16(wram, base + 0x0e),
+      readU16(wram, base + 0x10),
+      readU16(wram, base + 0x12),
+    ],
+    pp: [
+      readU8(wram, base + 0x24),
+      readU8(wram, base + 0x25),
+      readU8(wram, base + 0x26),
+      readU8(wram, base + 0x27),
+    ],
+    level: readU8(wram, base + 0x2a),
+    currentHp: readU16(wram, base + 0x28),
+    maxHp: readU16(wram, base + 0x2c),
+    slotIndex: readU8(wram, 0x0202406e + battler),
+  };
+}
+
 /** Get the player's active party Pokemon for the current displayed battler.
  *  Do NOT use gActiveBattler — it can point to scripts/enemies during transitions. */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
   const battler = getDisplayPlayerBattler(wram);
+  const battleFlags = readU32(wram, 0x02022fec);
+  if (battleFlags !== 0) {
+    const battlePkmn = readBattlePokemon(wram, battler);
+    if (battlePkmn.species !== 0) return battlePkmn;
+  }
+
   const partySlot = readU8(wram, 0x0202406e + battler); // gBattlerPartyIndexes[battler]
   const slot = partySlot <= 5 ? partySlot : 0;
   return readPartyPokemon(wram, slot);
