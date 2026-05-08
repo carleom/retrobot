@@ -67,6 +67,7 @@ import { readU8 } from "./scenes";
 import { executeMacro, MacroContext, Macro, MacroStep } from "./macros";
 import {
   selectMoveMacro,
+  selectMoveFromListMacro,
   useItemMacro,
   navigateToPartyMacro,
   switchFromPartyMacro,
@@ -525,7 +526,16 @@ const main = async () => {
                   let macroLabel: string;
 
                   if (parts[2] === "move") {
-                    macro = selectMoveMacro(parseInt(parts[3]));
+                    // Determine which macro to use based on current scene.
+                    // BATTLE_MOVE_SELECT means the move list is already open
+                    // (doubles: detector splits FIGHT→move into two steps).
+                    const { wram: mvWram } = await readCurrentState(pool, id, info);
+                    const mvScene = emeraldSceneDetector.detect(mvWram);
+                    if (mvScene === Scene.BATTLE_MOVE_SELECT) {
+                      macro = selectMoveFromListMacro(parseInt(parts[3]));
+                    } else {
+                      macro = selectMoveMacro(parseInt(parts[3]));
+                    }
                     macroLabel = "Move " + (parseInt(parts[3]) + 1);
                   } else if (parts[2] === "item") {
                     handleBattleItem(pool, id, info, player, message, parseInt(parts[3]), parseInt(parts[4]));

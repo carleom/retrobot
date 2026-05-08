@@ -93,6 +93,37 @@ export function selectMoveMacro(slotIndex: number): Macro {
   return steps;
 }
 
+/**
+ * Select a move from the move list (assumes the list is already open).
+ * Used in doubles when the scene detection splits FIGHT→move into two steps.
+ */
+export function selectMoveFromListMacro(slotIndex: number): Macro {
+  if (slotIndex < 0 || slotIndex > 3) {
+    throw new Error(`Invalid move slot index: ${slotIndex}. Must be 0-3.`);
+  }
+
+  const steps: MacroStep[] = [
+    { ...LEFT },
+    { ...idle(4) },
+    { ...LEFT },
+    { ...idle(4) },
+    { ...UP },
+    { ...idle(4) },
+    { ...UP },
+    { ...idle(4) },
+  ];
+
+  if (slotIndex === 1 || slotIndex === 3) {
+    steps.push({ ...RIGHT }, { ...idle(4) });
+  }
+  if (slotIndex === 2 || slotIndex === 3) {
+    steps.push({ ...DOWN }, { ...idle(4) });
+  }
+
+  steps.push({ ...A, updateButtons: true }, { ...idle(30) });
+  return steps;
+}
+
 // ── Select Target Macro (double battles) ─────────────────────────────────────
 
 /** Confirm the current target selection (press A). */
