@@ -218,10 +218,28 @@ export function readPartyPokemon(
   };
 }
 
-/** Get the player's active party Pokemon. Always uses battler 0 (player's first mon).
- *  Do NOT use gActiveBattler — it can point to the enemy during turn transitions. */
+/** Get the player battler whose action/moves should be shown. */
+function getDisplayPlayerBattler(wram: Uint8Array): 0 | 2 {
+  const battleFlags = readU32(wram, 0x02022fec);
+  if ((battleFlags & 1) === 0) return 0;
+
+  const comm0 = readU8(wram, 0x02024332);
+  const comm2 = readU8(wram, 0x02024332 + 2);
+  const buf2 = readU8(wram, 0x02023064 + 2 * 0x200);
+
+  // Once battler 0 is confirmed, the next player-facing layout is for the
+  // partner. Transitional print/healthbar controller commands can hide the
+  // real menu command, so comm0 is the most stable signal here.
+  if (comm0 >= 3 || buf2 === 0x04 || buf2 === 0x06 || comm2 >= 2) return 2;
+
+  return 0;
+}
+
+/** Get the player's active party Pokemon for the current displayed battler.
+ *  Do NOT use gActiveBattler — it can point to scripts/enemies during transitions. */
 function getActivePokemon(wram: Uint8Array): PartyPokemon {
-  const partySlot = readU8(wram, 0x0202406e); // gBattlerPartyIndexes[0] (u8, not u16)
+  const battler = getDisplayPlayerBattler(wram);
+  const partySlot = readU8(wram, 0x0202406e + battler); // gBattlerPartyIndexes[battler]
   const slot = partySlot <= 5 ? partySlot : 0;
   return readPartyPokemon(wram, slot);
 }

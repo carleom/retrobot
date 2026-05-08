@@ -369,6 +369,32 @@ test("active transitional battle still shows move buttons", () => {
   assert(ids.some((id) => id.includes("-macro-move-")), "should show move buttons");
 });
 
+test("double battle partner action shows partner moves", () => {
+  const wram = createWram();
+  writeU32(
+    wram,
+    ADDR.gBattleTypeFlags,
+    BattleTypeFlag.BATTLE_TYPE_DOUBLE |
+      BattleTypeFlag.BATTLE_TYPE_TRAINER |
+      BattleTypeFlag.BATTLE_TYPE_IS_MASTER,
+  );
+  writeU8(wram, ADDR.gActiveBattler, 4);
+  writeU8(wram, ADDR.gBattleCommunication, 5);
+  writeU8(wram, ADDR.gBattleCommunication + 2, BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN);
+  writeU8(wram, 0x02023064, 53);
+  writeU8(wram, 0x02023064 + 2 * 0x200, 18);
+  writeU8(wram, 0x0202406e, 0); // battler 0 party slot
+  writeU8(wram, 0x0202406e + 2, 1); // battler 2 party slot
+  writePartyPokemon(wram, 0, 25, [33, 45, 98, 29], [35, 30, 20, 15], 50, 100);
+  writePartyPokemon(wram, 1, 1, [10, 45, 73, 22], [35, 30, 20, 15], 50, 100);
+
+  const result = generateLayout(wram, GAME_ID);
+  const labels = getAllLabels(result.rows);
+
+  assert(labels.some((l) => l.includes("SCRATCH")), "should show partner's moves");
+  assert(!labels.some((l) => l.includes("HEADBUTT")), "should not show battler 0 moves");
+});
+
 // ── 0 PP moves disabled ──────────────────────────────────────────────────────
 
 test("moves with 0 PP are disabled", () => {
