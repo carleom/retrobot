@@ -1132,6 +1132,22 @@ const main = async () => {
                       macroResult,
                       "after-macro " + macroLabel,
                     );
+                    if (moveSlot !== null
+                        && emeraldSceneDetector.detect(macroResult.wram) === Scene.BATTLE_MOVE_TARGET) {
+                      fs.writeFileSync(
+                        path.resolve("data", id, "state.sav"),
+                        macroResult.state,
+                      );
+                      console.log(
+                        "[dbg-target-layout] game=" + id +
+                          " label=" + macroLabel +
+                          " ram={" + battleDebug(macroResult.wram) + "}",
+                      );
+                      await message.edit({
+                        components: buildMoveTarget(macroResult.wram, id) as any,
+                      });
+                      return;
+                    }
                   } else {
                     macroResult = await executeMacro(pool, ctx, macro);
                   }

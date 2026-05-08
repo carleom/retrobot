@@ -121,6 +121,23 @@ export class EmeraldSceneDetector implements SceneDetector {
         return Scene.BATTLE_MOVE_TARGET;
       }
 
+      const comm0 = readU8(wram, ADDR.gBattleCommunication);
+      const comm2 = readU8(wram, ADDR.gBattleCommunication + 2);
+      const act0 = readU8(wram, ADDR.gChosenActionByBattler);
+      const buf2 = readU8(wram, ADDR.gBattleBufferA + 2 * 0x200);
+
+      // After battler 0 chooses a selected-target move, EWRAM can show a
+      // transient controller command (print/healthbar) before the target sprite
+      // callback is visible. If battler 2's action menu is not open yet, keep
+      // the UI on target selection instead of falling through to battler 2.
+      if (act0 === ChosenAction.B_ACTION_USE_MOVE
+          && comm0 >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN
+          && comm2 <= BattleCommState.STATE_WAIT_ACTION_CHOSEN
+          && buf2 !== CONTROLLER_CHOOSEACTION
+          && buf2 !== CONTROLLER_CHOOSEMOVE) {
+        return Scene.BATTLE_MOVE_TARGET;
+      }
+
       if (bufferCmdPlayerBattler === CONTROLLER_CHOOSEACTION) {
         return Scene.BATTLE_FIGHT;
       }

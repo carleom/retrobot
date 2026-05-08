@@ -366,6 +366,22 @@ test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
 });
 
+test("double battle selected move before battler 2 action opens → BATTLE_MOVE_TARGET", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_DOUBLE);
+  writeU8(wram, ADDR.gBattlersCount, 4);
+  writeU8(wram, ADDR.gActiveBattler, 4);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY);
+  writeU8(wram, ADDR.gBattleCommunication + 2, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, ADDR.gChosenActionByBattler + 2, ChosenAction.B_ACTION_NONE);
+  writeU8(wram, 0x02023064, 0x14); // transient controller command after move selection
+  writeU8(wram, 0x02023064 + 2 * 0x200, 0x00); // battler 2 menu not open yet
+
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+});
+
 test("double battle CHOOSEMOVE without target sprite → BATTLE_MOVE_SELECT", () => {
   const wram = createWram();
   setupBattleState(wram);
