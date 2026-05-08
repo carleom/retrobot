@@ -12,7 +12,8 @@
     "test:scenes": "ts-node src/scenes/__tests__/emerald.test.ts",
     "test:layouts": "ts-node src/layouts/__tests__/emerald_layouts.test.ts",
     "test:macros": "ts-node src/macros/__tests__/emerald_macros.test.ts",
-    "setup:dev": "ts-node src/setup_dev_game.ts"
+    "setup:dev": "ts-node src/setup_dev_game.ts",
+    "test:fixtures:emerald": "ts-node src/fixtures/run_emerald_fixtures.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

@@ -1,0 +1,30 @@
+{
+  "rom": "Pokemon Emerald.gba",
+  "cases": [
+    {
+      "name": "overworld_basic",
+      "state": "overworld.sav",
+      "assert": {
+        "scene": "OVERWORLD",
+        "layoutScene": "OVERWORLD",
+        "labelsInclude": ["A", "B"]
+      }
+    },
+    {
+      "name": "double_battle_partner_move_select",
+      "state": "double_partner_move.sav",
+      "assert": {
+        "customIdsInclude": ["-macro-move-"]
+      },
+      "steps": [
+        {
+          "name": "select_move_4",
+          "macro": "move:3",
+          "assert": {
+            "customIdsInclude": ["-macro-target-"]
+          }
+        }
+      ]
+    }
+  ]
+}
