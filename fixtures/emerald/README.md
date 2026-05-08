@@ -1,15 +1,16 @@
 # Emerald Fixture Tests
 
-Drop real Emerald save-state fixtures here.
+This directory is the tracked scaffold/template only.
+
+Put real Emerald save-state fixtures in `local-fixtures/emerald/` instead, which is gitignored.
 
 ## Files
-- `manifest.json`: describes the ROM, save files, and expected assertions
-- `*.sav`: emulator save states to load
-- optional screenshots/reference notes alongside each save
+- `manifest.example.json` in this repo shows the expected shape
+- copy that structure into `local-fixtures/emerald/manifest.json`
+- keep real `*.sav` and ROM files under `local-fixtures/emerald/`
 
 ## Run
-- `yarn test:fixtures:emerald`
-- or `yarn test:fixtures:emerald fixtures/emerald`
+- `yarn test:fixtures:emerald local-fixtures/emerald`
 
 ## Notes
 - The runner loads a ROM + `.sav`, reads WRAM, runs scene/layout assertions, and can step inputs/macros between assertions.
