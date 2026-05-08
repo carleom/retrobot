@@ -154,7 +154,12 @@ export class EmeraldSceneDetector implements SceneDetector {
 
       case BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN:
         // In double battles, after a move is picked, the game asks for a target.
-        if (this.isDoubleBattle(wram) && chosenAction === ChosenAction.B_ACTION_USE_MOVE) {
+        // Only fire when both player battlers (0 and 2) have chosen their moves
+        // (comm >= CASE_CHOSEN). If battler 2 is still at WAIT_ACTION_CHOSEN,
+        // the game is showing battler 2's FIGHT screen, not the target prompt.
+        if (this.isDoubleBattle(wram)
+            && chosenAction === ChosenAction.B_ACTION_USE_MOVE
+            && readU8(wram, ADDR.gBattleCommunication + 2) >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN) {
           result = Scene.BATTLE_MOVE_TARGET;
         } else {
           result = this._resolveSubMenu(chosenAction);
