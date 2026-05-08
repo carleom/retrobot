@@ -12,12 +12,11 @@ Known-working double-battle baseline.
 - Layout fallback: `UNKNOWN` scene with active battle flags shows move buttons instead of overworld.
 - Bot restart restores smart layout from WRAM instead of raw controller buttons.
 - Discord interaction flow doesn't double-defer (`InteractionAlreadyReplied` fixed).
+- Target layout now uses `gBattlerPositions`/`gAbsentBattlerFlags` and disables fainted or absent opponents.
+- Healing items target the currently controlled battler's party entry in doubles.
+- Battle switch uses the current party cursor and works from battler 2's party screen context.
 
 ## Known Issues / Remaining Work
-- **Target buttons:** always show both enemy mons, even when one is fainted or absent.
-- **Target by position:** current layout hardcodes enemy order `[3, 1]` and default target as battler `1`. Should read `gBattlerPositions` to map positions to battlers, and check `gAbsentBattlerFlags`/HP to disable fainted targets.
-- **Item/potion targeting for battler 2:** `src/handlers/battleItem.ts` always selects party slot 0 after using a healing item. In doubles with battler 2 active, should navigate to `gBattlerPartyIndexes[2]`'s display position via `gBattlePartyCurrentOrder`.
-- **Switch handler for battler 2:** battle switch path (`index.ts` ~line 907) uses `navigateToPartyMacro` and assumes battler 0 context. Needs to account for battler 2's action menu and party order.
 - **Single-target detection still brittle in transitional states:** `buf[0]=18` PRINTSTRING / `actionFunc=11` states cause `UNKNOWN` scene. Scene detection could be improved by reading `gBattleBufferA` controller commands and `gBattlerControllerFuncs` if/when IWRAM becomes accessible.
 - **Back (B) handling:** canceling target selection, returning from move list, etc. may not be battler-aware in doubles.
 - **Internal `doubleBattle.ts` state tracker:** may be partially superseded by RAM-based fixes. Consider removing or consolidating.

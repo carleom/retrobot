@@ -95,6 +95,8 @@ function speciesName(id: number): string {
 
 const ADDR = {
   gBattleMons: 0x02024084,
+  gBattlerPositions: 0x02024076,
+  gAbsentBattlerFlags: 0x02024210,
   gPlayerParty: 0x020244ec,
   gActiveBattler: 0x02024064,
   encryptionKey: 0x02024b00,
@@ -671,19 +673,37 @@ const BATTLEMON_BASE = 0x02024084; // gBattleMons
 
 export function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuilder[] {
   const rows: ActionRowBuilder[] = [];
+  const absentFlags = readU8(wram, ADDR.gAbsentBattlerFlags);
+
+  const battlerForPosition = (position: number): number | null => {
+    for (let battler = 0; battler < 4; battler++) {
+      if (readU8(wram, ADDR.gBattlerPositions + battler) === position) {
+        return battler;
+      }
+    }
+    return null;
+  };
 
   // Read enemy battlers in on-screen order for Emerald doubles.
   const targetButtons: ButtonBuilder[] = [];
-  for (const battler of [3, 1]) {
+  for (const position of [3, 1]) {
+    const battler = battlerForPosition(position);
+    if (battler === null) {
+      targetButtons.push(btn(noneId(gameId), "—", ButtonStyle.Secondary, true));
+      continue;
+    }
+
     const speciesAddr = BATTLEMON_BASE + battler * BATTLEMON_SIZE;
     const species = readU16(wram, speciesAddr);
+    const hp = readU16(wram, speciesAddr + 0x28);
+    const absent = (absentFlags & (1 << battler)) !== 0;
     const name = speciesName(species);
     targetButtons.push(
       btn(
         `${gameId}-macro-target-${battler}`,
         name,
-        ButtonStyle.Primary,
-        species === 0,
+        absent || hp === 0 ? ButtonStyle.Secondary : ButtonStyle.Primary,
+        species === 0 || absent || hp === 0,
       ),
     );
   }

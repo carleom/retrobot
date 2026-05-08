@@ -921,7 +921,8 @@ const main = async () => {
                     };
                     // Check if party screen is already open (faint replacement)
                     const alreadyOnParty =
-                      ctxWram[0x02023064 - 0x02000000] === 0x08; // CONTROLLER_CHOOSEPOKEMON
+                      ctxWram[0x02023064 - 0x02000000] === 0x08 ||
+                      ctxWram[0x02023064 + 2 * 0x200 - 0x02000000] === 0x08; // CONTROLLER_CHOOSEPOKEMON
                     let navRes: MacroContext;
                     if (alreadyOnParty) {
                       // Party screen already open — skip navigation, start from current state
@@ -961,16 +962,30 @@ const main = async () => {
                         break;
                       }
                     }
-                    // Navigate DOWN from cursor (slot 0) to display position
-                    for (let i = 0; i < displayPos; i++) {
-                      navRes = await emulateParallel(pool, navRes, {
-                        input: { DOWN: true },
-                        duration: 4,
-                      });
-                      navRes = await emulateParallel(pool, navRes, {
-                        input: {},
-                        duration: 2,
-                      });
+                    // Navigate from the current party cursor to the target display position.
+                    const currentCursor = navRes.wram[0x0203ced1 - 0x02000000]; // gPartyMenu.slotId
+                    if (currentCursor > displayPos) {
+                      for (let i = 0; i < currentCursor - displayPos; i++) {
+                        navRes = await emulateParallel(pool, navRes, {
+                          input: { UP: true },
+                          duration: 4,
+                        });
+                        navRes = await emulateParallel(pool, navRes, {
+                          input: {},
+                          duration: 2,
+                        });
+                      }
+                    } else {
+                      for (let i = 0; i < displayPos - currentCursor; i++) {
+                        navRes = await emulateParallel(pool, navRes, {
+                          input: { DOWN: true },
+                          duration: 4,
+                        });
+                        navRes = await emulateParallel(pool, navRes, {
+                          input: {},
+                          duration: 2,
+                        });
+                      }
                     }
                     // Select and confirm
                     // Select the Pokemon
@@ -1055,11 +1070,17 @@ const main = async () => {
                           " ram={" + battleDebug(tgtWram) + "}",
                       );
                       const steps: MacroStep[] = [];
-                      // Emerald defaults selected-target moves to opponent-left
-                      // (battler 1). gMultiUsePlayerCursor is in IWRAM, so do
-                      // deterministic navigation from that default instead of
-                      // reading gMoveSelectionCursor, which is only the move slot.
-                      if (targetBattler === 3) {
+                      // Default selected-target cursor is opponent-left. Use
+                      // battler positions to see whether the clicked battler is
+                      // already that default target.
+                      let defaultTargetBattler = -1;
+                      for (let battler = 0; battler < 4; battler++) {
+                        if (tgtWram[0x02024076 + battler - 0x02000000] === 1) {
+                          defaultTargetBattler = battler;
+                          break;
+                        }
+                      }
+                      if (defaultTargetBattler !== targetBattler) {
                         steps.push({ input: { LEFT: true }, duration: 4 });
                         steps.push({ input: {}, duration: 6 });
                       }

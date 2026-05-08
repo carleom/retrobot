@@ -137,16 +137,68 @@ export async function handleBattleItem(
   navSteps.push({ input: {}, duration: 60 });
   // A: select USE → uses item or throws ball
   navSteps.push({ input: { A: true }, duration: 4 });
-  // Healing items (pocket 0) need party screen; balls (pocket 1) don't
-  if (itemPocket === 0) {
-    navSteps.push({ input: {}, duration: 120 }); // wait for party screen
-    navSteps.push({ input: { A: true }, duration: 4 }); // select slot 0
-  }
-  navSteps.push({ input: {}, duration: 60 });
-  navSteps.push({ input: {}, duration: 60 });
 
-  if (navSteps.length > 0) {
-    bagCtx = await executeMacro(pool, bagCtx, navSteps);
+  if (itemPocket === 0) {
+    // Healing items need the party screen. Split execution here so we can
+    // navigate to the battler currently being controlled in doubles.
+    navSteps.push({ input: {}, duration: 120 });
+    if (navSteps.length > 0) {
+      bagCtx = await executeMacro(pool, bagCtx, navSteps);
+    }
+
+    bagCtx = await emulateParallel(pool, bagCtx, { input: {}, duration: 1 });
+    const wram = bagCtx.wram;
+    const comm0 = wram[0x02024332 - 0x02000000];
+    const comm2 = wram[0x02024332 + 2 - 0x02000000];
+    const buf2 = wram[0x02023064 + 2 * 0x200 - 0x02000000];
+    const isDouble = (wram[0x02022fec - 0x02000000] & 1) !== 0;
+    const activeBattler =
+      isDouble && (comm0 >= 3 || buf2 === 0x04 || buf2 === 0x06 || comm2 >= 2)
+        ? 2
+        : 0;
+    const targetPartySlot = wram[0x0202406e + activeBattler - 0x02000000];
+    const currentCursor = wram[0x0203ced1 - 0x02000000]; // gPartyMenu.slotId
+
+    const orderBase = 0x0203cf00 - 0x02000000;
+    let targetDisplayPos = 0;
+    for (let dp = 0; dp < 6; dp++) {
+      const byteIdx = orderBase + Math.floor(dp / 2);
+      const nibble = dp % 2 === 0 ? wram[byteIdx] >> 4 : wram[byteIdx] & 0x0f;
+      if (nibble === targetPartySlot) {
+        targetDisplayPos = dp;
+        break;
+      }
+    }
+
+    console.log(
+      "[item] heal target battler=" + activeBattler +
+        " partySlot=" + targetPartySlot +
+        " cursor=" + currentCursor +
+        " displayPos=" + targetDisplayPos,
+    );
+
+    const partySteps: MacroStep[] = [];
+    if (currentCursor > targetDisplayPos) {
+      for (let i = 0; i < currentCursor - targetDisplayPos; i++) {
+        partySteps.push({ input: { UP: true }, duration: 4 });
+        partySteps.push({ input: {}, duration: 4 });
+      }
+    } else if (targetDisplayPos > currentCursor) {
+      for (let i = 0; i < targetDisplayPos - currentCursor; i++) {
+        partySteps.push({ input: { DOWN: true }, duration: 4 });
+        partySteps.push({ input: {}, duration: 4 });
+      }
+    }
+    partySteps.push({ input: { A: true }, duration: 4 });
+    partySteps.push({ input: {}, duration: 60 });
+    partySteps.push({ input: {}, duration: 60 });
+    bagCtx = await executeMacro(pool, bagCtx, partySteps);
+  } else {
+    navSteps.push({ input: {}, duration: 60 });
+    navSteps.push({ input: {}, duration: 60 });
+    if (navSteps.length > 0) {
+      bagCtx = await executeMacro(pool, bagCtx, navSteps);
+    }
   }
 
   // Save state and run autoplay
