@@ -29,11 +29,18 @@ import { EmeraldSceneDetector } from "../emerald";
 
 const WRAM_SIZE = 0x40000; // 256 KB EWRAM
 const ADDR = {
+  gSprites: 0x02020630,
   gBattleTypeFlags: 0x02022fec,
   gActiveBattler: 0x02024064,
+  gBattlersCount: 0x0202406c,
+  gBattlerSpriteIds: 0x020241e4,
   gChosenActionByBattler: 0x0202421c,
   gBattleCommunication: 0x02024332,
 } as const;
+
+const SPRITE_SIZE = 0x44;
+const SPRITE_CALLBACK_OFFSET = 0x1c;
+const SPRITECB_SHOW_AS_MOVE_TARGET = 0x08039ad8;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -335,6 +342,57 @@ test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_DOUBLE);
+  writeU8(wram, ADDR.gBattlersCount, 4);
+  writeU8(wram, ADDR.gActiveBattler, 0);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x06); // CONTROLLER_CHOOSEMOVE
+
+  const targetSpriteId = 7;
+  writeU8(wram, ADDR.gBattlerSpriteIds + 1, targetSpriteId);
+  writeU32(
+    wram,
+    ADDR.gSprites + targetSpriteId * SPRITE_SIZE + SPRITE_CALLBACK_OFFSET,
+    SPRITECB_SHOW_AS_MOVE_TARGET | 1, // Thumb function pointer form
+  );
+
+  assert(detector.hasMoveTargetCursor(wram), "should detect target cursor");
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+});
+
+test("double battle CHOOSEMOVE without target sprite → BATTLE_MOVE_SELECT", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_DOUBLE);
+  writeU8(wram, ADDR.gBattlersCount, 4);
+  writeU8(wram, ADDR.gActiveBattler, 0);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x06); // CONTROLLER_CHOOSEMOVE
+
+  assert(!detector.hasMoveTargetCursor(wram), "should not detect target cursor");
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+});
+
+test("double battle CHOOSEACTION at player battler 2 → BATTLE_FIGHT", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_DOUBLE);
+  writeU8(wram, ADDR.gBattlersCount, 4);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY);
+  writeU8(wram, ADDR.gBattleCommunication + 2, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, ADDR.gChosenActionByBattler + 2, ChosenAction.B_ACTION_NONE);
+  writeU8(wram, 0x02023064 + 2 * 0x200, 0x04); // CONTROLLER_CHOOSEACTION
+
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
 // ── BATTLE_BAG_POCKET ────────────────────────────────────────────────────────

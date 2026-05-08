@@ -8,8 +8,11 @@
  *   gBattleTypeFlags      0x02022fec  (u32)
  *   gBattleBufferA        0x02023064  (u8[MAX_BATTLERS][0x200])
  *   gActiveBattler        0x02024064  (u8)
+ *   gBattlersCount        0x0202406c  (u8)
+ *   gBattlerSpriteIds     0x020241e4  (u8[MAX_BATTLERS])
  *   gChosenActionByBattler 0x0202421c (u8[4])
  *   gBattleCommunication  0x02024332  (u8[8])
+ *   gSprites              0x02020630  (struct Sprite[MAX_SPRITES + 1])
  */
 
 import {
@@ -25,17 +28,30 @@ import {
 
 /** Absolute GBA addresses for scene detection symbols in Pokémon Emerald (USA). */
 const ADDR = {
+  gSprites: 0x02020630,
   gBattleTypeFlags: 0x02022fec,
   gBattleBufferA: 0x02023064, // u8[MAX_BATTLERS][0x200], stride 0x200 per battler
   gActiveBattler: 0x02024064,
+  gBattlersCount: 0x0202406c,
+  gBattlerSpriteIds: 0x020241e4,
   gChosenActionByBattler: 0x0202421c,
   gBattleCommunication: 0x02024332,
 } as const;
 
+/** Battle controller command: choose FIGHT / BAG / PKMN / RUN. */
+const CONTROLLER_CHOOSEACTION = 0x04;
 /** Battle controller command: Yes/No box (switch prompt, learn move, etc.). */
 const CONTROLLER_YESNOBOX = 0x05;
+/** Battle controller command: choose a move. */
+const CONTROLLER_CHOOSEMOVE = 0x06;
 /** Battle controller command: Choose a Pokémon (voluntary switch or faint replacement). */
 const CONTROLLER_CHOOSEPOKEMON = 0x08;
+
+const MAX_BATTLERS_COUNT = 4;
+const MAX_SPRITES = 128;
+const SPRITE_SIZE = 0x44;
+const SPRITE_CALLBACK_OFFSET = 0x1c;
+const SPRITECB_SHOW_AS_MOVE_TARGET = 0x08039ad8;
 
 // ── Detector Implementation ──────────────────────────────────────────────────
 
@@ -83,41 +99,35 @@ export class EmeraldSceneDetector implements SceneDetector {
 
     // Buffer command at the active battler's index
     const bufferCmd = readU8(wram, ADDR.gBattleBufferA + activeBattler * 0x200);
+    const bufferCmdPlayerBattler = readU8(wram, ADDR.gBattleBufferA + playerBattler * 0x200);
     // Buffer command at battler 0 (player's sub-menu commands always here)
     const bufferCmdPlayer = readU8(wram, ADDR.gBattleBufferA);
-
-    // ── Double-battle trace logging ────────────────────────────────────────
-    const isDouble = (battleTypeFlags & 1) !== 0;
-    if (isDouble) {
-      console.log(
-        "[dbg] double playerBattler=" + playerBattler +
-        " active=" + activeBattler +
-        " battlersCount=" + readU8(wram, 0x0202406c) +
-        " actionFunc=" + readU8(wram, 0x02024083) +
-        " comm=[" + readU8(wram, ADDR.gBattleCommunication) +
-        "," + readU8(wram, ADDR.gBattleCommunication + 1) +
-        "," + readU8(wram, ADDR.gBattleCommunication + 2) +
-        "," + readU8(wram, ADDR.gBattleCommunication + 3) + "]" +
-        " act=[" + readU8(wram, ADDR.gChosenActionByBattler) +
-        "," + readU8(wram, ADDR.gChosenActionByBattler + 1) +
-        "," + readU8(wram, ADDR.gChosenActionByBattler + 2) +
-        "," + readU8(wram, ADDR.gChosenActionByBattler + 3) + "]" +
-        " execFlags=0x" + readU8(wram, 0x02024068).toString(16) +
-        " bufCmd[0]=0x" + bufferCmdPlayer.toString(16) +
-        " bufCmd[" + activeBattler + "]=0x" + bufferCmd.toString(16),
-      );
-    }
 
     // ── Phase 2: Controller-driven UI states ──────────────────────────────
     // These surface via buffer commands and are reliable regardless of commState.
 
     if (bufferCmd === CONTROLLER_YESNOBOX) {
-      if (isDouble) console.log("[dbg] → " + Scene.BATTLE_YESNO + " (bufferCmd)");
       return Scene.BATTLE_YESNO;
     }
     if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
-      if (isDouble) console.log("[dbg] → " + Scene.BATTLE_PKMN_SWITCH + " (bufferCmd)");
       return Scene.BATTLE_PKMN_SWITCH;
+    }
+
+    // In double battles, target selection is represented by the move controller
+    // changing a battler sprite callback to SpriteCB_ShowAsMoveTarget. This is
+    // EWRAM-visible and disambiguates comm=2 without internal bot state.
+    if (this.isDoubleBattle(wram)) {
+      if (this.hasMoveTargetCursor(wram)) {
+        return Scene.BATTLE_MOVE_TARGET;
+      }
+
+      if (bufferCmdPlayerBattler === CONTROLLER_CHOOSEACTION) {
+        return Scene.BATTLE_FIGHT;
+      }
+
+      if (bufferCmdPlayerBattler === CONTROLLER_CHOOSEMOVE) {
+        return Scene.BATTLE_MOVE_SELECT;
+      }
     }
 
     // ── Phase 3: Old-style yesnobox (Cmd_yesnobox in battle script) ───────
@@ -135,7 +145,6 @@ export class EmeraldSceneDetector implements SceneDetector {
       // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
       const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
       if (comm1 === 0 || comm1 === 1) {
-        if (isDouble) console.log("[dbg] → " + Scene.BATTLE_YESNO + " (old yesnobox)");
         return Scene.BATTLE_YESNO;
       }
     }
@@ -175,7 +184,6 @@ export class EmeraldSceneDetector implements SceneDetector {
         result = Scene.UNKNOWN;
         break;
     }
-    if (isDouble) console.log("[dbg] → " + result + " (commState switch)");
     return result;
   }
 
@@ -227,6 +235,36 @@ export class EmeraldSceneDetector implements SceneDetector {
   isDoubleBattle(wram: Uint8Array): boolean {
     const battleTypeFlags = readU32(wram, ADDR.gBattleTypeFlags);
     return (battleTypeFlags & 1) !== 0;
+  }
+
+  /**
+   * Detect whether the double-battle move target cursor is active.
+   *
+   * gMultiUsePlayerCursor is in IWRAM, but target mode also marks the selected
+   * battler's sprite with SpriteCB_ShowAsMoveTarget, and sprite data is EWRAM.
+   */
+  hasMoveTargetCursor(wram: Uint8Array): boolean {
+    const battlersCount = Math.min(
+      readU8(wram, ADDR.gBattlersCount) || MAX_BATTLERS_COUNT,
+      MAX_BATTLERS_COUNT,
+    );
+
+    for (let battler = 0; battler < battlersCount; battler++) {
+      const spriteId = readU8(wram, ADDR.gBattlerSpriteIds + battler);
+      if (spriteId > MAX_SPRITES) continue;
+
+      const callback = readU32(
+        wram,
+        ADDR.gSprites + spriteId * SPRITE_SIZE + SPRITE_CALLBACK_OFFSET,
+      );
+
+      // Thumb function pointers usually have bit 0 set; accept either form.
+      if ((callback & ~1) === SPRITECB_SHOW_AS_MOVE_TARGET) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 

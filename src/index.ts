@@ -90,9 +90,6 @@ import { buildMultiplierRows, multiplierButton } from "./handlers/components";
 import { readCurrentState } from "./handlers/readCurrentState";
 import {
   getDoubleState,
-  advanceDoubleState,
-  getDoubleScene,
-  clearDoubleState,
 } from "./handlers/doubleBattle";
 import encode from "image-encode";
 import { arraysEqual, rgb565toRaw } from "./util";
@@ -973,30 +970,21 @@ const main = async () => {
                     av_info: {},
                   };
 
-                  // In double battles, let battler 0's running script
-                  // (actionFunc=11) finish before the move macro. Step through
-                  // macro individually so the game processes each button press.
+                  // In double battles, run autoplay FIRST to advance battler 0's
+                  // running script. Once battler 2's controller activates, autoplay
+                  // stops at the FIGHT screen, then the macro runs.
                   const isDouble = (preWram[0x02022fec - 0x02000000] & 1) !== 0;
                   let macroResult: MacroContext;
                   if (isDouble) {
-                    // Log battler 2's state before macro
-                    const b2Comm = ctx.wram[0x02024332 + 2 - 0x02000000];
-                    const b2Cursor = ctx.wram[0x020244ac + 2 - 0x02000000]; // gActionSelectionCursor[2]
-                    const b2BufCmd = ctx.wram[0x02023064 + 2 * 0x200 - 0x02000000]; // gBattleBufferA[2][0]
-                    console.log("[dbg] before macro: b2 comm=" + b2Comm + " cursor=" + b2Cursor + " bufCmd=0x" + b2BufCmd.toString(16));
-                    
-                    // Wait for scripts to finish — battler 2's input ignored otherwise
-                    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
-                    macroResult = ctx;
-                    for (const step of macro) {
-                      macroResult = await emulateParallel(pool, macroResult, step);
-                    }
-                    
-                    // Log battler 2's state after macro
-                    const b2Comm2 = macroResult.wram[0x02024332 + 2 - 0x02000000];
-                    const b2Cursor2 = macroResult.wram[0x020244ac + 2 - 0x02000000];
-                    const b2BufCmd2 = macroResult.wram[0x02023064 + 2 * 0x200 - 0x02000000];
-                    console.log("[dbg] after macro:  b2 comm=" + b2Comm2 + " cursor=" + b2Cursor2 + " bufCmd=0x" + b2BufCmd2.toString(16));
+                    const { state: preState } = await emulate(
+                      pool, info.coreType,
+                      new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+                      ctx.state,
+                      { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Fast },
+                      [],
+                    );
+                    ctx.state = preState;
+                    macroResult = await executeMacro(pool, ctx, macro);
                   } else {
                     macroResult = await executeMacro(pool, ctx, macro);
                   }
@@ -1026,25 +1014,11 @@ const main = async () => {
                     finalState,
                   );
 
-                  // Double battle: use internal state tracker instead of scene detector.
-                  // comm states are ambiguous in doubles (comm=2 means 3 different screens).
-                  let macRows: any[];
-                  let macScene: Scene;
-                  const isDoubleBattle = (finalWram[0x02022fec - 0x02000000] & 1) !== 0;
-                  if (isDoubleBattle) {
-                    const ds = getDoubleState(id, finalWram);
-                    advanceDoubleState(id); // move to next phase after this macro
-                    const nextDs = getDoubleState(id, finalWram);
-                    const scene = nextDs ? getDoubleScene(nextDs) : generateLayout(finalWram, id, 1).scene;
-                    console.log("[dbg] double state: battler=" + ds.battler + " phase=" + ds.phase + " → scene=" + scene);
-                    const layout = generateLayout(finalWram, id, 1);
-                    macRows = scene !== layout.scene ? (scene === Scene.BATTLE_MOVE_TARGET ? buildMoveTarget(finalWram, id) : layout.rows) : layout.rows;
-                    macScene = scene;
-                  } else {
-                    const layout = generateLayout(finalWram, id, 1);
-                    macRows = layout.rows;
-                    macScene = layout.scene;
-                  }
+                  const { rows: macRows, scene: macScene } = generateLayout(
+                    finalWram,
+                    id,
+                    1,
+                  );
                   const macComponents =
                     macScene === Scene.OVERWORLD
                       ? [
