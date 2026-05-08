@@ -88,6 +88,12 @@ import { handleBattleItem } from "./handlers/battleItem";
 import { handleOverworldBagUse } from "./handlers/overworldBag";
 import { buildMultiplierRows, multiplierButton } from "./handlers/components";
 import { readCurrentState } from "./handlers/readCurrentState";
+import {
+  getDoubleState,
+  advanceDoubleState,
+  getDoubleScene,
+  clearDoubleState,
+} from "./handlers/doubleBattle";
 import encode from "image-encode";
 import { arraysEqual, rgb565toRaw } from "./util";
 import * as tmp from "tmp";
@@ -527,12 +533,17 @@ const main = async () => {
                   let macroLabel: string;
 
                   if (parts[2] === "move") {
-                    // Determine which macro to use based on current scene.
-                    // BATTLE_MOVE_SELECT means the move list is already open
-                    // (doubles: detector splits FIGHT→move into two steps).
+                    // Use state tracker in doubles, scene detector otherwise
                     const { wram: mvWram } = await readCurrentState(pool, id, info);
-                    const mvScene = emeraldSceneDetector.detect(mvWram);
-                    if (mvScene === Scene.BATTLE_MOVE_SELECT) {
+                    const isDouble = (mvWram[0x02022fec - 0x02000000] & 1) !== 0;
+                    let atMoveList = false;
+                    if (isDouble) {
+                      const ds = getDoubleState(id, mvWram);
+                      atMoveList = ds.phase === "move";
+                    } else {
+                      atMoveList = emeraldSceneDetector.detect(mvWram) === Scene.BATTLE_MOVE_SELECT;
+                    }
+                    if (atMoveList) {
                       macro = selectMoveFromListMacro(parseInt(parts[3]));
                     } else {
                       macro = selectMoveMacro(parseInt(parts[3]));
@@ -1015,23 +1026,20 @@ const main = async () => {
                     finalState,
                   );
 
-                  // In double battles, force target layout when both battlers
-                  // have chosen moves (comm >= 2). The scene detector can't
-                  // reliably distinguish this from the move select screen.
+                  // Double battle: use internal state tracker instead of scene detector.
+                  // comm states are ambiguous in doubles (comm=2 means 3 different screens).
                   let macRows: any[];
                   let macScene: Scene;
                   const isDoubleBattle = (finalWram[0x02022fec - 0x02000000] & 1) !== 0;
                   if (isDoubleBattle) {
-                    const comm0 = finalWram[0x02024332 - 0x02000000];
-                    const comm2 = finalWram[0x02024332 + 2 - 0x02000000];
-                    if (comm0 >= 2 && comm2 >= 2) {
-                      macRows = buildMoveTarget(finalWram, id);
-                      macScene = Scene.BATTLE_MOVE_TARGET;
-                    } else {
-                      const layout = generateLayout(finalWram, id, 1);
-                      macRows = layout.rows;
-                      macScene = layout.scene;
-                    }
+                    const ds = getDoubleState(id, finalWram);
+                    advanceDoubleState(id); // move to next phase after this macro
+                    const nextDs = getDoubleState(id, finalWram);
+                    const scene = nextDs ? getDoubleScene(nextDs) : generateLayout(finalWram, id, 1).scene;
+                    console.log("[dbg] double state: battler=" + ds.battler + " phase=" + ds.phase + " → scene=" + scene);
+                    const layout = generateLayout(finalWram, id, 1);
+                    macRows = scene !== layout.scene ? (scene === Scene.BATTLE_MOVE_TARGET ? buildMoveTarget(finalWram, id) : layout.rows) : layout.rows;
+                    macScene = scene;
                   } else {
                     const layout = generateLayout(finalWram, id, 1);
                     macRows = layout.rows;
