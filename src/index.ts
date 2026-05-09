@@ -280,7 +280,11 @@ const main = async () => {
         .setDescription("Text to enter")
         .setRequired(true),
     );
-  client.application.commands.set([command, uploadEmojisCmd, dexCmd, textInputCmd]);
+  const commands = [command, uploadEmojisCmd, dexCmd, textInputCmd];
+  await client.application.commands.set(commands);
+  for (const guild of client.guilds.cache.values()) {
+    await guild.commands.set(commands);
+  }
 
   await unlockGames(client);
 
