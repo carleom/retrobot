@@ -334,7 +334,13 @@ function namingMaxChars(wram: Uint8Array, screenPtr: number): number {
   return wramU8(wram, templatePtr + 1) || 10;
 }
 
-export function namingScreenTextMacro(wram: Uint8Array, text: string): Macro {
+function readNamingScreenState(wram: Uint8Array): {
+  screenPtr: number;
+  maxChars: number;
+  page: number;
+  cursorX: number;
+  cursorY: number;
+} {
   const screenPtr = wramU32(wram, NAMING_SCREEN_PTR);
   if (screenPtr === 0) {
     throw new Error("Naming screen is not active");
@@ -346,12 +352,80 @@ export function namingScreenTextMacro(wram: Uint8Array, text: string): Macro {
   }
 
   const maxChars = namingMaxChars(wram, screenPtr);
+  const page = wramU8(wram, screenPtr + NAMING_CURRENT_PAGE);
+  const cursorSpriteId = wramU8(wram, screenPtr + NAMING_CURSOR_SPRITE_ID);
+  const cursorSprite = GSPRITES + cursorSpriteId * SPRITE_SIZE;
+  const cursorX = wramU16(wram, cursorSprite + SPRITE_DATA);
+  const cursorY = wramU16(wram, cursorSprite + SPRITE_DATA + 2);
+
+  return { screenPtr, maxChars, page, cursorX, cursorY };
+}
+
+export function namingScreenClearMacro(wram: Uint8Array): Macro {
+  const { maxChars } = readNamingScreenState(wram);
+  const steps: MacroStep[] = [];
+  for (let i = 0; i < maxChars; i++) steps.push(...press({ B: true }, 4));
+  return steps;
+}
+
+export function namingScreenCharMacro(wram: Uint8Array, ch: string): Macro {
+  const target = findNamingKey(ch);
+  if (!target) throw new Error("Unsupported naming-screen character: " + ch);
+
+  const state = readNamingScreenState(wram);
+  let page = state.page;
+  let cursorX = state.cursorX;
+  let cursorY = state.cursorY;
+
+  const steps: MacroStep[] = [];
+
+  while (page !== target.page) {
+    steps.push(...press({ SELECT: true }, 40));
+    page = (page + 1) % 3;
+    const pageCols = page === PAGE_SYMBOLS ? 6 : 8;
+    if (cursorX >= pageCols) cursorX = pageCols;
+  }
+
+  const pageCols = page === PAGE_SYMBOLS ? 6 : 8;
+  if (cursorX >= pageCols) {
+    steps.push(...press({ LEFT: true }, 4));
+    cursorX = pageCols - 1;
+    cursorY = cursorY === 1 ? 1 : cursorY === 2 ? 3 : 0;
+  }
+
+  while (cursorY < target.y) {
+    steps.push(...press({ DOWN: true }, 4));
+    cursorY++;
+  }
+  while (cursorY > target.y) {
+    steps.push(...press({ UP: true }, 4));
+    cursorY--;
+  }
+  while (cursorX < target.x) {
+    steps.push(...press({ RIGHT: true }, 4));
+    cursorX++;
+  }
+  while (cursorX > target.x) {
+    steps.push(...press({ LEFT: true }, 4));
+    cursorX--;
+  }
+
+  steps.push(...press({ A: true }, 8));
+  return steps;
+}
+
+export function namingScreenConfirmMacro(): Macro {
+  return [...press({ START: true }, 8), ...press({ A: true }, 90)];
+}
+
+export function namingScreenTextMacro(wram: Uint8Array, text: string): Macro {
+  const { maxChars } = readNamingScreenState(wram);
   if (text.length > maxChars) {
     throw new Error("Text is too long for this naming screen; max is " + maxChars);
   }
 
-  let page = wramU8(wram, screenPtr + NAMING_CURRENT_PAGE);
-  const cursorSpriteId = wramU8(wram, screenPtr + NAMING_CURSOR_SPRITE_ID);
+  let page = wramU8(wram, wramU32(wram, NAMING_SCREEN_PTR) + NAMING_CURRENT_PAGE);
+  const cursorSpriteId = wramU8(wram, wramU32(wram, NAMING_SCREEN_PTR) + NAMING_CURSOR_SPRITE_ID);
   const cursorSprite = GSPRITES + cursorSpriteId * SPRITE_SIZE;
   let cursorX = wramU16(wram, cursorSprite + SPRITE_DATA);
   let cursorY = wramU16(wram, cursorSprite + SPRITE_DATA + 2);

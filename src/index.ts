@@ -80,7 +80,9 @@ import {
   cancelTargetMacro,
   yesMacro,
   noMacro,
-  namingScreenTextMacro,
+  namingScreenCharMacro,
+  namingScreenClearMacro,
+  namingScreenConfirmMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
 import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
@@ -486,8 +488,7 @@ const main = async () => {
             const text = interaction.options.get("text", true).value as string;
             try {
               const { stateBytes, gameBytes, wram } = await readCurrentState(pool, id, info);
-              const macro = namingScreenTextMacro(wram, text);
-              const ctx: MacroContext = {
+              let ctx: MacroContext = {
                 coreType: info.coreType,
                 game: gameBytes,
                 state: stateBytes,
@@ -495,13 +496,52 @@ const main = async () => {
                 wram,
                 av_info: {},
               };
-              let macroResult = await executeMacro(pool, ctx, macro);
+              ctx = await executeMacro(pool, ctx, namingScreenClearMacro(ctx.wram));
+              ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+              for (const ch of text) {
+                ctx = await executeMacro(pool, ctx, namingScreenCharMacro(ctx.wram, ch));
+                ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+              }
+              let macroResult = await executeMacro(pool, ctx, namingScreenConfirmMacro());
               macroResult = await emulateParallel(pool, macroResult, { input: {}, duration: 30 });
               fs.writeFileSync(
                 path.resolve("data", id, "state.sav"),
                 macroResult.state,
               );
+              const {
+                recording,
+                recordingName,
+                state: finalState,
+                wram: finalWram,
+              } = await emulate(
+                pool,
+                info.coreType,
+                gameBytes,
+                macroResult.state,
+                {
+                  ...info,
+                  inputAssist: InputAssist.Autoplay,
+                  inputAssistSpeed: InputAssistSpeed.Normal,
+                },
+                [],
+              );
+              fs.writeFileSync(
+                path.resolve("data", id, "state.sav"),
+                finalState,
+              );
+              const { rows: textRows, scene: textScene } = generateLayout(finalWram, id, 1);
+              const textComponents =
+                textScene === Scene.OVERWORLD
+                  ? [
+                      ...textRows,
+                      ...buildMultiplierRows(id, 1, info.multipliers, true),
+                    ]
+                  : textRows;
               await interaction.editReply("Entered text: `" + text + "`");
+              await interaction.channel.send({
+                files: [{ attachment: recording, name: recordingName }],
+                components: textComponents as any,
+              });
             } catch (e: any) {
               await interaction.editReply("Could not enter text: " + (e.message || e));
             }
