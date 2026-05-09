@@ -49,7 +49,7 @@ export async function handleBattleItem(
 
   // Phase 2: Read current pocket from RAM
   bagCtx = await emulateParallel(pool, bagCtx, { input: {}, duration: 1 });
-  const currPocket = bagCtx.wram[0x0203ce5d - 0x02000000];
+  let currPocket = bagCtx.wram[0x0203ce5d - 0x02000000];
   console.log(
     "[item] bag open, current pocket=" +
       currPocket +
@@ -57,20 +57,27 @@ export async function handleBattleItem(
       itemPocket,
   );
 
-  // Phase 3: Navigate to the correct pocket (LEFT to go to previous pocket)
-  const leftPresses = (currPocket - itemPocket + 5) % 5;
-  const pocketSteps: MacroStep[] = [];
-  for (let i = 0; i < leftPresses; i++) {
-    pocketSteps.push({ input: { LEFT: true }, duration: 4 });
-    pocketSteps.push({ input: {}, duration: 6 });
-  }
-  if (pocketSteps.length > 0) {
-    bagCtx = await executeMacro(pool, bagCtx, pocketSteps);
+  // Phase 3: Navigate to the correct pocket using the shortest direction.
+  // Bag pocket transitions animate; repeated wraparound inputs can be dropped
+  // or overshoot into Cancel on low frame waits.
+  for (let attempt = 0; currPocket !== itemPocket && attempt < 5; attempt++) {
+    const rightPresses = (itemPocket - currPocket + 5) % 5;
+    const leftPresses = (currPocket - itemPocket + 5) % 5;
+    const pocketInput = rightPresses <= leftPresses ? { RIGHT: true } : { LEFT: true };
+    bagCtx = await executeMacro(pool, bagCtx, [
+      { input: pocketInput, duration: 4 },
+      { input: {}, duration: 24 },
+    ]);
     bagCtx = await emulateParallel(pool, bagCtx, { input: {}, duration: 1 });
+    currPocket = bagCtx.wram[0x0203ce5d - 0x02000000];
     console.log(
       "[item] after pocket nav, pocket=" +
-        bagCtx.wram[0x0203ce5d - 0x02000000],
+        currPocket,
     );
+  }
+
+  if (currPocket !== itemPocket) {
+    throw new Error("Could not navigate to item pocket " + itemPocket + ", got " + currPocket);
   }
 
   // Phase 4: Read items, find display position, navigate DOWN
@@ -89,15 +96,16 @@ export async function handleBattleItem(
         .join(", "),
   );
   const found = items.find((it) => it.itemId === itemId);
-  let displayPos = 0;
-  if (found) {
-    displayPos = sorted.findIndex((it) => it.itemId === itemId);
+  if (!found) {
+    throw new Error("Item " + itemId + " not found in pocket " + itemPocket);
   }
+  const displayPos = sorted.findIndex((it) => it.itemId === itemId);
   // Read current bag cursor position (gBagPosition.cursorPosition[pocket])
   const cursorAddr = 0x0203ce60 + itemPocket * 2;
-  const cursorPos =
+  const readCursorPos = () =>
     bagCtx.wram[cursorAddr - 0x02000000] |
     (bagCtx.wram[cursorAddr + 1 - 0x02000000] << 8);
+  let cursorPos = readCursorPos();
   console.log(
     "[item] itemId=" +
       itemId +
@@ -110,28 +118,29 @@ export async function handleBattleItem(
   );
 
   const navSteps: MacroStep[] = [];
-  // Navigate from current cursor to target (no wrapping in bag)
-  if (cursorPos > displayPos) {
-    const deltaUp = cursorPos - displayPos;
+
+  // Navigate from current cursor to target and verify each movement. This is
+  // scroll-safe because gBagPosition.cursorPosition is the logical list index.
+  for (let attempt = 0; cursorPos !== displayPos && attempt < sorted.length + 1; attempt++) {
+    const input = cursorPos > displayPos ? { UP: true } : { DOWN: true };
     console.log(
-      "[item] cursor " + cursorPos + " → " + displayPos + " UP×" + deltaUp,
+      "[item] cursor " + cursorPos +
+        " → " + displayPos +
+        " " + (cursorPos > displayPos ? "UP" : "DOWN"),
     );
-    for (let i = 0; i < deltaUp; i++) {
-      navSteps.push({ input: { UP: true }, duration: 4 });
-      navSteps.push({ input: {}, duration: 4 });
-    }
-  } else if (displayPos > cursorPos) {
-    const deltaDown = displayPos - cursorPos;
-    console.log(
-      "[item] cursor " + cursorPos + " → " + displayPos + " DOWN×" + deltaDown,
-    );
-    for (let i = 0; i < deltaDown; i++) {
-      navSteps.push({ input: { DOWN: true }, duration: 4 });
-      navSteps.push({ input: {}, duration: 4 });
-    }
-  } else {
-    console.log("[item] cursor already at target " + cursorPos);
+    bagCtx = await executeMacro(pool, bagCtx, [
+      { input, duration: 4 },
+      { input: {}, duration: 6 },
+    ]);
+    bagCtx = await emulateParallel(pool, bagCtx, { input: {}, duration: 1 });
+    cursorPos = readCursorPos();
   }
+
+  if (cursorPos !== displayPos) {
+    throw new Error("Could not navigate to item " + itemId + ", cursor=" + cursorPos + " target=" + displayPos);
+  }
+
+  console.log("[item] cursor at target " + cursorPos);
   // A: select item from bag list → opens USE/CANCEL submenu
   navSteps.push({ input: { A: true }, duration: 4 });
   navSteps.push({ input: {}, duration: 60 });
