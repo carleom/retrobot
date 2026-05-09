@@ -272,6 +272,131 @@ export function openBagMacro(): Macro {
   ];
 }
 
+// ── Naming Screen Text Input ─────────────────────────────────────────────────
+
+const NAMING_SCREEN_PTR = 0x02039f94;
+const GSPRITES = 0x02020630;
+const SPRITE_SIZE = 0x44;
+const SPRITE_DATA = 0x2e;
+const NAMING_STATE = 0x1e10;
+const NAMING_CURRENT_PAGE = 0x1e22;
+const NAMING_CURSOR_SPRITE_ID = 0x1e23;
+const NAMING_TEMPLATE = 0x1e28;
+
+const PAGE_SYMBOLS = 0;
+const PAGE_UPPER = 1;
+const PAGE_LOWER = 2;
+
+const NAMING_KEYBOARDS: Record<number, string[]> = {
+  [PAGE_LOWER]: ["abcdef .", "ghijkl ,", "mnopqrs ", "tuvwxyz "],
+  [PAGE_UPPER]: ["ABCDEF .", "GHIJKL ,", "MNOPQRS ", "TUVWXYZ "],
+  [PAGE_SYMBOLS]: ["01234 ", "56789 ", "!?MF/-", "...'  "],
+};
+
+function wramU8(wram: Uint8Array, addr: number): number {
+  return wram[addr - 0x02000000] ?? 0;
+}
+
+function wramU16(wram: Uint8Array, addr: number): number {
+  const off = addr - 0x02000000;
+  return (wram[off] | (wram[off + 1] << 8)) >>> 0;
+}
+
+function wramU32(wram: Uint8Array, addr: number): number {
+  const off = addr - 0x02000000;
+  return (
+    wram[off] |
+    (wram[off + 1] << 8) |
+    (wram[off + 2] << 16) |
+    (wram[off + 3] << 24)
+  ) >>> 0;
+}
+
+function press(input: MacroStep["input"], idleFrames = 8): MacroStep[] {
+  return [{ input, duration: 4 }, { input: {}, duration: idleFrames }];
+}
+
+function findNamingKey(ch: string): { page: number; x: number; y: number } | null {
+  const normalized = ch === "…" || ch === "‘" || ch === "’" ? "'" : ch;
+  for (const page of [PAGE_UPPER, PAGE_LOWER, PAGE_SYMBOLS]) {
+    const rows = NAMING_KEYBOARDS[page];
+    for (let y = 0; y < rows.length; y++) {
+      const x = rows[y].indexOf(normalized);
+      if (x >= 0) return { page, x, y };
+    }
+  }
+  return null;
+}
+
+function namingMaxChars(wram: Uint8Array, screenPtr: number): number {
+  const templatePtr = wramU32(wram, screenPtr + NAMING_TEMPLATE);
+  if (templatePtr === 0) return 10;
+  return wramU8(wram, templatePtr + 1) || 10;
+}
+
+export function namingScreenTextMacro(wram: Uint8Array, text: string): Macro {
+  const screenPtr = wramU32(wram, NAMING_SCREEN_PTR);
+  if (screenPtr === 0) {
+    throw new Error("Naming screen is not active");
+  }
+
+  const state = wramU8(wram, screenPtr + NAMING_STATE);
+  if (state !== 2) {
+    throw new Error("Naming screen is not ready for input");
+  }
+
+  const maxChars = namingMaxChars(wram, screenPtr);
+  if (text.length > maxChars) {
+    throw new Error("Text is too long for this naming screen; max is " + maxChars);
+  }
+
+  let page = wramU8(wram, screenPtr + NAMING_CURRENT_PAGE);
+  const cursorSpriteId = wramU8(wram, screenPtr + NAMING_CURSOR_SPRITE_ID);
+  const cursorSprite = GSPRITES + cursorSpriteId * SPRITE_SIZE;
+  let cursorX = wramU16(wram, cursorSprite + SPRITE_DATA);
+  let cursorY = wramU16(wram, cursorSprite + SPRITE_DATA + 2);
+
+  const steps: MacroStep[] = [];
+
+  // Replace existing text rather than appending. B deletes regardless of cursor.
+  for (let i = 0; i < maxChars; i++) steps.push(...press({ B: true }, 4));
+
+  for (const ch of text) {
+    const target = findNamingKey(ch);
+    if (!target) throw new Error("Unsupported naming-screen character: " + ch);
+
+    while (page !== target.page) {
+      steps.push(...press({ SELECT: true }, 40));
+      page = (page + 1) % 3;
+      const pageCols = page === PAGE_SYMBOLS ? 6 : 8;
+      if (cursorX >= pageCols) cursorX = pageCols - 1;
+    }
+
+    while (cursorY < target.y) {
+      steps.push(...press({ DOWN: true }, 4));
+      cursorY++;
+    }
+    while (cursorY > target.y) {
+      steps.push(...press({ UP: true }, 4));
+      cursorY--;
+    }
+    while (cursorX < target.x) {
+      steps.push(...press({ RIGHT: true }, 4));
+      cursorX++;
+    }
+    while (cursorX > target.x) {
+      steps.push(...press({ LEFT: true }, 4));
+      cursorX--;
+    }
+
+    steps.push(...press({ A: true }, 8));
+  }
+
+  steps.push(...press({ START: true }, 8));
+  steps.push(...press({ A: true }, 90));
+  return steps;
+}
+
 // ── Overworld Switch Macro
 export function backMacro(): Macro {
   return [{ ...B }, { ...idle(12) }];

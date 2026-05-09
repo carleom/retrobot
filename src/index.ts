@@ -80,6 +80,7 @@ import {
   cancelTargetMacro,
   yesMacro,
   noMacro,
+  namingScreenTextMacro,
 } from "./macros/emerald";
 import { emulateParallel } from "./workerInterface";
 import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
@@ -270,7 +271,16 @@ const main = async () => {
     .addBooleanOption((opt) =>
       opt.setName("moves").setDescription("Show learnable moves"),
     );
-  client.application.commands.set([command, uploadEmojisCmd, dexCmd]);
+  const textInputCmd = new SlashCommandBuilder()
+    .setName("text-input")
+    .setDescription("Type text into the current Emerald naming screen")
+    .addStringOption((opt) =>
+      opt
+        .setName("text")
+        .setDescription("Text to enter")
+        .setRequired(true),
+    );
+  client.application.commands.set([command, uploadEmojisCmd, dexCmd, textInputCmd]);
 
   await unlockGames(client);
 
@@ -453,6 +463,43 @@ const main = async () => {
                 `Pokemon "${name}" not found. Check spelling and try again.
 \`\`\`${e.message || e}\`\`\``,
               );
+            }
+            return;
+          }
+          if (interaction.commandName === "text-input") {
+            await interaction.deferReply();
+            const result = await findMostRecentGame(
+              client,
+              interaction.channelId,
+            );
+            if (!result) {
+              await interaction.editReply("Could not find game");
+              return;
+            }
+
+            const id = result.id;
+            const info = getGameInfo(id);
+            const text = interaction.options.get("text", true).value as string;
+            try {
+              const { stateBytes, gameBytes, wram } = await readCurrentState(pool, id, info);
+              const macro = namingScreenTextMacro(wram, text);
+              const ctx: MacroContext = {
+                coreType: info.coreType,
+                game: gameBytes,
+                state: stateBytes,
+                frames: [],
+                wram,
+                av_info: {},
+              };
+              let macroResult = await executeMacro(pool, ctx, macro);
+              macroResult = await emulateParallel(pool, macroResult, { input: {}, duration: 30 });
+              fs.writeFileSync(
+                path.resolve("data", id, "state.sav"),
+                macroResult.state,
+              );
+              await interaction.editReply("Entered text: `" + text + "`");
+            } catch (e: any) {
+              await interaction.editReply("Could not enter text: " + (e.message || e));
             }
             return;
           }
