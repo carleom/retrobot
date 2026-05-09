@@ -106,6 +106,9 @@ export class EmeraldSceneDetector implements SceneDetector {
     // ── Phase 2: Controller-driven UI states ──────────────────────────────
     // These surface via buffer commands and are reliable regardless of commState.
 
+    if (bufferCmdPlayer === CONTROLLER_CHOOSEACTION) {
+      return Scene.BATTLE_FIGHT;
+    }
     if (bufferCmd === CONTROLLER_YESNOBOX) {
       return Scene.BATTLE_YESNO;
     }
@@ -195,9 +198,9 @@ export class EmeraldSceneDetector implements SceneDetector {
       case ChosenAction.B_ACTION_USE_MOVE:
         return Scene.BATTLE_MOVE_SELECT;
       case ChosenAction.B_ACTION_USE_ITEM:
-        return Scene.BATTLE_BAG_POCKET;
+        return Scene.BATTLE_FIGHT;
       case ChosenAction.B_ACTION_SWITCH:
-        return Scene.BATTLE_PKMN_SWITCH;
+        return Scene.BATTLE_FIGHT;
       case ChosenAction.B_ACTION_RUN:
       case ChosenAction.B_ACTION_NONE:
         return Scene.BATTLE_FIGHT;

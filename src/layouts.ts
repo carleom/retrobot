@@ -295,25 +295,28 @@ function findBagItem(
   return found ? found.quantity : 0;
 }
 
-/** Read all items from a bag pocket using gBagPockets pointer chain. */
+/** Read all items from a bag pocket. */
 function readBagPocket(wram: Uint8Array, pocketIndex: number): BagItem[] {
   const BAG_POCKETS_ADDR = 0x02039dd8;
-  const pocketAddr = BAG_POCKETS_ADDR + pocketIndex * 8;
+  const fixedSlotsAddr = POCKET_ADDRS[pocketIndex];
+  const fixedCapacity = POCKET_CAPS[pocketIndex];
+  if (!fixedSlotsAddr || !fixedCapacity) return [];
 
-  // Read itemSlots pointer and capacity from gBagPockets[pocketIndex]
+  const pocketAddr = BAG_POCKETS_ADDR + pocketIndex * 8;
   const itemSlotsPtr = readU32(wram, pocketAddr);
   const capacity = readU8(wram, pocketAddr + 4);
 
-  // If pointer is null or capacity is 0, fall back to fixed save block address
-  if (!itemSlotsPtr || !capacity) {
-    // Fallback: try fixed save block addresses
-    const fallbackAddr = POCKET_ADDRS[pocketIndex];
-    const fallbackCap = POCKET_CAPS[pocketIndex];
-    if (!fallbackAddr || !fallbackCap) return [];
-    return readBagSlots(wram, fallbackAddr, fallbackCap);
+  if (itemSlotsPtr && capacity) {
+    const saveBlockOffset = itemSlotsPtr - fixedSlotsAddr;
+    return readBagSlots(
+      wram,
+      itemSlotsPtr,
+      capacity,
+      ADDR.encryptionKey + saveBlockOffset,
+    );
   }
 
-  return readBagSlots(wram, itemSlotsPtr, capacity);
+  return readBagSlots(wram, fixedSlotsAddr, fixedCapacity, ADDR.encryptionKey);
 }
 
 /** Read item slots from a given address with the given capacity. */
@@ -321,8 +324,9 @@ function readBagSlots(
   wram: Uint8Array,
   slotsAddr: number,
   capacity: number,
+  encryptionKeyAddr: number,
 ): BagItem[] {
-  const encryptionKey = readU32(wram, ADDR.encryptionKey);
+  const encryptionKey = readU32(wram, encryptionKeyAddr);
   const items: BagItem[] = [];
 
   // Debug log

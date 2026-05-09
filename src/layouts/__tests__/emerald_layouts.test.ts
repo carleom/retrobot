@@ -311,6 +311,30 @@ test("wild battle fight shows moves + balls + items + actions", () => {
   );
 });
 
+test("battle action menu with BAG cursor still shows fight layout", () => {
+  const wram = createWram();
+  setupWildBattle(wram);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CHOSEN,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_ITEM);
+  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION
+
+  writePartyPokemon(wram, 0, 1, [33, 45, 73, 22], [25, 40, 10, 15], 80, 80);
+  writeU32(wram, ADDR.encryptionKey, 0);
+  writeBagItem(wram, ADDR.bagBalls, 0, 4, 5);
+  writeBagItem(wram, ADDR.bagItems, 0, 13, 8);
+
+  const result = generateLayout(wram, GAME_ID);
+  const ids = getAllCustomIds(result.rows);
+
+  assert(result.scene === Scene.BATTLE_FIGHT, "should stay on fight layout");
+  assert(ids.includes(`${GAME_ID}-macro-item-1-4`), "should show Poké Ball quick button");
+  assert(!ids.includes(`${GAME_ID}-macro-item-0-0`), "should not show bag-pocket slot buttons");
+});
+
 // ── Battle Fight — Trainer ───────────────────────────────────────────────────
 
 test("trainer battle fight hides balls and run", () => {
@@ -490,6 +514,7 @@ test("pokemon switch layout shows party with HP", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
+  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
 
   // Party: Bulbasaur (active, 80/80), Charmander (4, 120/120), empty, Pidgey fainted, ...
   writePartyPokemon(wram, 0, 1, [33, 45, 0, 0], [25, 40, 0, 0], 80, 80); // BULBASAUR
@@ -536,6 +561,7 @@ test("fainted Pokemon are disabled in switch layout", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
+  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
 
   writePartyPokemon(wram, 0, 1, [33, 0, 0, 0], [25, 0, 0, 0], 0, 80); // fainted (hp=0)
   writeU32(wram, ADDR.encryptionKey, 0);

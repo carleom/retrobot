@@ -13,7 +13,8 @@
     "test:layouts": "ts-node src/layouts/__tests__/emerald_layouts.test.ts",
     "test:macros": "ts-node src/macros/__tests__/emerald_macros.test.ts",
     "setup:dev": "ts-node src/setup_dev_game.ts",
-    "test:fixtures:emerald": "ts-node src/fixtureRunner/run_emerald_fixtures.ts"
+    "test:fixtures:emerald": "ts-node src/fixtureRunner/run_emerald_fixtures.ts",
+    "fixture:grab": "bash -c 'if [ ! -f local-scripts/grab_fixture.sh ]; then printf \"Missing local-scripts/grab_fixture.sh. This helper is local-only and is not committed. See docs/fixture_tests.md.\\n\" >&2; exit 1; fi; bash local-scripts/grab_fixture.sh \"$@\"' --"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

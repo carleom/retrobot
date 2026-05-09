@@ -262,15 +262,15 @@ test("Old yesnobox NOT fired: activeBattler=0 (normal sub-menu)", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
-test("Old yesnobox NOT fired: bufferCmd[0]=0x04 (CHOOSEACTION sub-menu)", () => {
+test("CHOOSEACTION buffer wins over stale chosen action", () => {
   const wram = createWram();
   writeU32(wram, ADDR.gBattleTypeFlags, 4);
   writeU8(wram, ADDR.gActiveBattler, 2);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
   writeU8(wram, ADDR.gBattleCommunication + 1, 0);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION — real sub-menu
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
+  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION — action menu is still visible
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
 test("Old yesnobox NOT fired: bufferCmd[0]=0 (stale buffer, excluded)", () => {
@@ -395,9 +395,9 @@ test("double battle CHOOSEACTION at player battler 2 → BATTLE_FIGHT", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
-// ── BATTLE_BAG_POCKET ────────────────────────────────────────────────────────
+// ── Stale item/switch chosen actions ─────────────────────────────────────────
 
-test("STATE_WAIT_ACTION_CHOSEN + USE_ITEM → BATTLE_BAG_POCKET", () => {
+test("STATE_WAIT_ACTION_CHOSEN + USE_ITEM stays on BATTLE_FIGHT without bag controller", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -406,10 +406,10 @@ test("STATE_WAIT_ACTION_CHOSEN + USE_ITEM → BATTLE_BAG_POCKET", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_ITEM);
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_BAG_POCKET);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
-test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_ITEM → BATTLE_BAG_POCKET", () => {
+test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_ITEM stays on BATTLE_FIGHT without bag controller", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -418,12 +418,12 @@ test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_ITEM → BATTLE_BAG_POCKET", () => {
     BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_ITEM);
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_BAG_POCKET);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
 // ── BATTLE_PKMN_SWITCH ───────────────────────────────────────────────────────
 
-test("STATE_WAIT_ACTION_CHOSEN + SWITCH → BATTLE_PKMN_SWITCH", () => {
+test("STATE_WAIT_ACTION_CHOSEN + SWITCH stays on BATTLE_FIGHT without party controller", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -432,10 +432,10 @@ test("STATE_WAIT_ACTION_CHOSEN + SWITCH → BATTLE_PKMN_SWITCH", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
-test("STATE_WAIT_ACTION_CASE_CHOSEN + SWITCH → BATTLE_PKMN_SWITCH", () => {
+test("STATE_WAIT_ACTION_CASE_CHOSEN + SWITCH stays on BATTLE_FIGHT without party controller", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU8(
@@ -444,7 +444,7 @@ test("STATE_WAIT_ACTION_CASE_CHOSEN + SWITCH → BATTLE_PKMN_SWITCH", () => {
     BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
 // ── RUN → BATTLE_FIGHT (no sub-menu) ─────────────────────────────────────────
