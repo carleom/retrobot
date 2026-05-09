@@ -12,6 +12,24 @@ Local gitignored runtime fixtures (recommended):
 - `local-fixtures/emerald/*.sav`
 - `local-fixtures/emerald/<rom>.gba`
 
+## Public Repo Safety
+This is a public-facing repository. Keep committed fixture support generic and safe for public review.
+
+Safe to commit:
+- fixture runner source code
+- docs and generic workflow notes
+- manifest templates with placeholder names only
+- assertion examples that do not include real save data
+
+Do not commit:
+- ROMs, BIOS files, save states, screenshots, GIFs, or other copyrighted game-derived assets
+- real `.sav`, `.gba`, `.gb`, `.gbc`, `.nds`, or similar emulator files
+- private server paths, SSH usernames, hostnames, IP addresses, tokens, keys, or credentials
+- local helper scripts that include personal workflow details
+- `local-fixtures/`, `local-scripts/`, `data/`, or `roms/` contents
+
+If a workflow needs private values, put them in ignored local files or environment variables. Keep tracked docs to placeholders like `user@server`, `/repos/retrobot`, and `emerald.gba`.
+
 ## Manifest Shape
 See `fixtures/emerald/manifest.example.json`. Copy it to `local-fixtures/emerald/manifest.json` and edit there.
 
@@ -51,9 +69,29 @@ It is meant to grow into broader double-battle integration coverage once you pro
 
 ## Run
 - `yarn test:fixtures:emerald local-fixtures/emerald`
-- `yarn test:fixtures:emerald fixtures/emerald` (only for the tracked example scaffold)
+
+The tracked `fixtures/emerald/` directory is only a template. The runner needs a real ROM and real `.sav` state files, so use `local-fixtures/emerald/` for actual runs.
 
 ## Capture Saves On Server
-- `yarn fixture:grab overworld_basic`
-- `yarn fixture:grab double_partner_move 255d3`
-- optional explicit target dir: `yarn fixture:grab double_partner_move 255d3 /repos/retrobot/local-fixtures/emerald`
+The fixture capture helper is local-only and gitignored at `local-scripts/grab_fixture.sh`.
+
+Local capture from a checkout that has `data/<game-id>/state.sav`:
+
+```sh
+local-scripts/grab_fixture.sh overworld_basic
+local-scripts/grab_fixture.sh double_partner_move 255d3
+```
+
+Desktop pull from a server checkout:
+
+```sh
+RETROBOT_FIXTURE_REMOTE=user@server \
+RETROBOT_FIXTURE_REMOTE_REPO=/repos/retrobot \
+local-scripts/grab_fixture.sh double_partner_move 255d3
+```
+
+Environment variables:
+- `RETROBOT_FIXTURE_REMOTE`: SSH target for the server, e.g. `user@server`. If unset, the script reads from the current local checkout.
+- `RETROBOT_FIXTURE_REMOTE_REPO`: repo path on the server. Defaults to the current local path, which is usually only correct when both machines use the same path.
+
+Then create or update `local-fixtures/emerald/manifest.json` so its `rom` and `state` entries match the copied files.

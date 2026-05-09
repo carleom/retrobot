@@ -1,5 +1,5 @@
 {
-  "rom": "Pokemon Emerald.gba",
+  "rom": "emerald.gba",
   "cases": [
     {
       "name": "overworld_basic",

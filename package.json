@@ -13,8 +13,7 @@
     "test:layouts": "ts-node src/layouts/__tests__/emerald_layouts.test.ts",
     "test:macros": "ts-node src/macros/__tests__/emerald_macros.test.ts",
     "setup:dev": "ts-node src/setup_dev_game.ts",
-    "test:fixtures:emerald": "ts-node src/fixtureRunner/run_emerald_fixtures.ts",
-    "fixture:grab": "bash scripts/grab_fixture.sh"
+    "test:fixtures:emerald": "ts-node src/fixtureRunner/run_emerald_fixtures.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

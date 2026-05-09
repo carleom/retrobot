@@ -17,5 +17,7 @@ decompiled/
 roms/
 docs/notes.md
 config/emoji_ids.json
+.DS_Store
 
 local-fixtures/
+local-scripts/
