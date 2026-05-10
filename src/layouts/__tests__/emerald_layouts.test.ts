@@ -27,7 +27,10 @@ const WRAM_SIZE = 0x40000;
 
 const ADDR = {
   gBattleTypeFlags: 0x02022fec,
+  gBattleMons: 0x02024084,
   gActiveBattler: 0x02024064,
+  gBattlerPositions: 0x02024076,
+  gAbsentBattlerFlags: 0x02024210,
   gChosenActionByBattler: 0x0202421c,
   gBattleCommunication: 0x02024332,
   gPlayerParty: 0x020244ec,
@@ -37,6 +40,7 @@ const ADDR = {
 } as const;
 
 const POKEMON_SIZE = 0x64;
+const BATTLEMON_SIZE = 0x58;
 
 // ── WRAM Helpers ─────────────────────────────────────────────────────────────
 
@@ -501,6 +505,31 @@ test("move select layout shows move names without PP", () => {
     labels.some((l) => l.includes("Back")),
     "should have B buttonack button",
   );
+});
+
+test("single battle move target shows confirm target instead of double slots", () => {
+  const wram = createWram();
+  setupTrainerBattle(wram);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY,
+  );
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_TWORETURNVALUES target prompt
+  writeU8(wram, ADDR.gBattlerPositions, 0);
+  writeU8(wram, ADDR.gBattlerPositions + 1, 1);
+  writeU16(wram, ADDR.gBattleMons + BATTLEMON_SIZE, 81); // MAGNEMITE
+  writeU16(wram, ADDR.gBattleMons + BATTLEMON_SIZE + 0x28, 34);
+
+  const result = generateLayout(wram, GAME_ID);
+  const labels = getAllLabels(result.rows);
+  const ids = getAllCustomIds(result.rows);
+
+  assert(result.scene === Scene.BATTLE_MOVE_TARGET, "should be target scene");
+  assert(labels.some((l) => l.includes("Target MAGNEMITE")), "should show target confirm label");
+  assert(ids.includes(`${GAME_ID}-macro-target-confirm`), "should confirm default target");
+  assert(!labels.includes("—"), "should not show double-battle placeholder target");
 });
 
 // ── Pokémon Switch Layout ────────────────────────────────────────────────────

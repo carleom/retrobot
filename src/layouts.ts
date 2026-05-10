@@ -711,6 +711,27 @@ export function buildMoveTarget(wram: Uint8Array, gameId: string): ActionRowBuil
     return null;
   };
 
+  if (!sceneDetector.isDoubleBattle(wram)) {
+    const battler = battlerForPosition(1);
+    const speciesAddr = battler === null ? 0 : BATTLEMON_BASE + battler * BATTLEMON_SIZE;
+    const species = battler === null ? 0 : readU16(wram, speciesAddr);
+    const hp = battler === null ? 0 : readU16(wram, speciesAddr + 0x28);
+    const absent = battler === null || (absentFlags & (1 << battler)) !== 0;
+    const name = species === 0 ? "Target" : speciesName(species);
+    rows.push(
+      row(
+        btn(
+          `${gameId}-macro-target-confirm`,
+          `Target ${name}`,
+          ButtonStyle.Primary,
+          species === 0 || absent || hp === 0,
+        ),
+      ),
+    );
+    rows.push(row(btn(`${gameId}-b-1`, "⬅️ Back to Moves", ButtonStyle.Secondary)));
+    return rows;
+  }
+
   // Read enemy battlers in on-screen order for Emerald doubles.
   const targetButtons: ButtonBuilder[] = [];
   for (const position of [3, 1]) {
