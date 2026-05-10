@@ -374,6 +374,21 @@ test("single battle target return controller during standby → BATTLE_MOVE_TARG
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
 });
 
+test("stale move action with healthbar controller after target cancel → BATTLE_FIGHT", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x12); // CONTROLLER_HEALTHBARUPDATE stale on action menu.
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
+});
+
 test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
   const wram = createWram();
   setupBattleState(wram);

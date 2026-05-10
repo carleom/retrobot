@@ -46,6 +46,8 @@ const CONTROLLER_YESNOBOX = 0x05;
 const CONTROLLER_CHOOSEMOVE = 0x06;
 /** Battle controller command: Choose a Pokémon (voluntary switch or faint replacement). */
 const CONTROLLER_CHOOSEPOKEMON = 0x08;
+/** Stale controller command commonly left after returning to the action menu. */
+const CONTROLLER_HEALTHBARUPDATE = 0x12;
 /** Battle controller command used while returning a selected move target. */
 const CONTROLLER_TWORETURNVALUES = 0x14;
 
@@ -121,6 +123,11 @@ export class EmeraldSceneDetector implements SceneDetector {
         && commState >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN
         && commState <= BattleCommState.STATE_WAIT_ACTION_CONFIRMED) {
       return Scene.BATTLE_MOVE_TARGET;
+    }
+    if (bufferCmdPlayer === CONTROLLER_HEALTHBARUPDATE
+        && activeBattler !== playerBattler
+        && commState === BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN) {
+      return Scene.BATTLE_FIGHT;
     }
 
     // In double battles, target selection is represented by the move controller
