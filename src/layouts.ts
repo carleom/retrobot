@@ -487,6 +487,9 @@ export function buildOverworld(
 // ── Overworld Bag Layout (potion quick-access) ────────────────────────────────
 
 const HEAL_ITEM_IDS = [13, 22, 21, 20, 19]; // Potion, Super, Hyper, Max, Full Restore
+const MACH_BIKE_ITEM_ID = 259;
+const ITEMFINDER_ITEM_ID = 261;
+const ACRO_BIKE_ITEM_ID = 272;
 
 export function buildOverworldBag(
   wram: Uint8Array,
@@ -504,8 +507,28 @@ export function buildOverworldBag(
       healEmoji,
     );
   });
+  const hasMachBike = findBagItem(wram, 4, MACH_BIKE_ITEM_ID) > 0;
+  const hasAcroBike = findBagItem(wram, 4, ACRO_BIKE_ITEM_ID) > 0;
+  const bikeItemId = hasMachBike ? MACH_BIKE_ITEM_ID : ACRO_BIKE_ITEM_ID;
+  const directButtons = [
+    btn(
+      `${gameId}-macro-bag-direct-${bikeItemId}`,
+      "",
+      ButtonStyle.Secondary,
+      !hasMachBike && !hasAcroBike,
+      "🚲",
+    ),
+    btn(
+      `${gameId}-macro-bag-direct-${ITEMFINDER_ITEM_ID}`,
+      "",
+      ButtonStyle.Secondary,
+      findBagItem(wram, 4, ITEMFINDER_ITEM_ID) === 0,
+      "🛜",
+    ),
+  ];
   return [
     row(...itemButtons),
+    row(...directButtons),
     row(btn(`${gameId}-b-1`, "⬅️ Back", ButtonStyle.Secondary)),
   ];
 }

@@ -12,6 +12,93 @@ import { readCurrentState } from "./readCurrentState";
 import { buildMultiplierRows } from "./components";
 import { Scene } from "../scenes";
 
+async function openOverworldBag(
+  pool: Piscina,
+  id: string,
+  info: GameInfo,
+): Promise<MacroContext> {
+  const { stateBytes, gameBytes } = await readCurrentState(pool, id, info);
+  let ctx: MacroContext = {
+    coreType: info.coreType,
+    game: gameBytes,
+    state: stateBytes,
+    frames: [],
+    wram: new Uint8Array(0),
+    av_info: {},
+  };
+
+  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+  const cursorPos = ctx.wram[0x0203760e - 0x02000000];
+  const upPresses = Number.isFinite(cursorPos) ? cursorPos : 0;
+  const downToBag = 2; // POKéDEX=0, POKéMON=1, BAG=2
+
+  ctx = await emulateParallel(pool, ctx, { input: { START: true }, duration: 4 });
+  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 20 });
+
+  for (let i = 0; i < upPresses; i++) {
+    ctx = await emulateParallel(pool, ctx, { input: { UP: true }, duration: 2 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 2 });
+  }
+  for (let i = 0; i < downToBag; i++) {
+    ctx = await emulateParallel(pool, ctx, { input: { DOWN: true }, duration: 2 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 2 });
+  }
+
+  ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
+  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 300 });
+  return await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+}
+
+async function navigateBagPocket(
+  pool: Piscina,
+  ctx: MacroContext,
+  itemPocket: number,
+): Promise<MacroContext> {
+  let currPocket = ctx.wram[0x0203ce5d - 0x02000000];
+  for (let attempt = 0; currPocket !== itemPocket && attempt < 5; attempt++) {
+    const rightPresses = (itemPocket - currPocket + 5) % 5;
+    const leftPresses = (currPocket - itemPocket + 5) % 5;
+    const input = rightPresses <= leftPresses ? { RIGHT: true } : { LEFT: true };
+    ctx = await emulateParallel(pool, ctx, { input, duration: 4 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 24 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+    currPocket = ctx.wram[0x0203ce5d - 0x02000000];
+  }
+  if (currPocket !== itemPocket) {
+    throw new Error("Could not navigate to item pocket " + itemPocket + ", got " + currPocket);
+  }
+  return ctx;
+}
+
+async function navigateBagItem(
+  pool: Piscina,
+  ctx: MacroContext,
+  itemPocket: number,
+  itemId: number,
+): Promise<MacroContext> {
+  const items = readBagPocket(ctx.wram, itemPocket);
+  const sorted = [...items].sort((a, b) => a.slotIndex - b.slotIndex);
+  const displayPos = sorted.findIndex((it) => it.itemId === itemId);
+  if (displayPos < 0) {
+    throw new Error("Item " + itemId + " not found in pocket " + itemPocket);
+  }
+
+  const cursorAddr = 0x0203ce60 + itemPocket * 2;
+  const readCursor = () => ctx.wram[cursorAddr - 0x02000000] | (ctx.wram[cursorAddr + 1 - 0x02000000] << 8);
+  let cursor = readCursor();
+  for (let attempt = 0; cursor !== displayPos && attempt < sorted.length + 1; attempt++) {
+    const input = cursor > displayPos ? { UP: true } : { DOWN: true };
+    ctx = await emulateParallel(pool, ctx, { input, duration: 4 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 6 });
+    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+    cursor = readCursor();
+  }
+  if (cursor !== displayPos) {
+    throw new Error("Could not navigate to item " + itemId + ", cursor=" + cursor + " target=" + displayPos);
+  }
+  return ctx;
+}
+
 /**
  * Use an item from the overworld bag on a party Pokémon.
  *
@@ -34,63 +121,13 @@ export async function handleOverworldBagUse(
 ): Promise<void> {
   await message.channel.sendTyping();
 
-  const { stateBytes, gameBytes } = await readCurrentState(pool, id, info);
-  let ctx: MacroContext = {
-    coreType: info.coreType,
-    game: gameBytes,
-    state: stateBytes,
-    frames: [],
-    wram: new Uint8Array(0),
-    av_info: {},
-  };
-
-  // 1. Read sStartMenuCursorPos before opening menu
-  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
-  const cursorPos = ctx.wram[0x0203760e - 0x02000000];
-  const upPresses = Number.isFinite(cursorPos) ? cursorPos : 0;
-  const downToBag = 2; // BAG is position 2: POKéDEX=0, POKéMON=1, BAG=2
-
-  // Open start menu
-  ctx = await emulateParallel(pool, ctx, { input: { START: true }, duration: 4 });
-  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 20 });
-
-  // Navigate to BAG
-  for (let i = 0; i < upPresses; i++) {
-    ctx = await emulateParallel(pool, ctx, { input: { UP: true }, duration: 2 });
-    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 2 });
-  }
-  for (let i = 0; i < downToBag; i++) {
-    ctx = await emulateParallel(pool, ctx, { input: { DOWN: true }, duration: 2 });
-    ctx = await emulateParallel(pool, ctx, { input: {}, duration: 2 });
-  }
-  // Open bag — generous wait (same 300f as battle item handler)
-  ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
-  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 300 });
-
-  // Verify bag opened by reading current pocket
-  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 1 });
+  let ctx = await openOverworldBag(pool, id, info);
   const currPocket = ctx.wram[0x0203ce5d - 0x02000000];
   console.log("[ow-bag] bag open, pocket=" + currPocket);
 
   // 2. Read items, find the target item's display position
-  const items = readBagPocket(ctx.wram, 0);
-  const sorted = [...items].sort((a, b) => a.slotIndex - b.slotIndex);
-  const displayPos = sorted.findIndex((it) => it.itemId === itemId);
-  const cursorAddr = 0x0203ce60; // gBagPosition.cursorPosition[0]
-  const currCursor = ctx.wram[cursorAddr - 0x02000000] | (ctx.wram[cursorAddr + 1 - 0x02000000] << 8);
-
-  // Navigate to target item
-  if (currCursor > displayPos) {
-    for (let i = 0; i < currCursor - displayPos; i++) {
-      ctx = await emulateParallel(pool, ctx, { input: { UP: true }, duration: 4 });
-      ctx = await emulateParallel(pool, ctx, { input: {}, duration: 4 });
-    }
-  } else if (displayPos > currCursor) {
-    for (let i = 0; i < displayPos - currCursor; i++) {
-      ctx = await emulateParallel(pool, ctx, { input: { DOWN: true }, duration: 4 });
-      ctx = await emulateParallel(pool, ctx, { input: {}, duration: 4 });
-    }
-  }
+  ctx = await navigateBagPocket(pool, ctx, 0);
+  ctx = await navigateBagItem(pool, ctx, 0, itemId);
 
   // Select item → opens USE/CANCEL submenu
   ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
@@ -117,6 +154,52 @@ export async function handleOverworldBagUse(
     ctx = await emulateParallel(pool, ctx, { input: { B: true }, duration: 4 });
     ctx = await emulateParallel(pool, ctx, { input: {}, duration: 20 });
   }
+
+  fs.writeFileSync(path.resolve("data", id, "state.sav"), ctx.state);
+  const {
+    recording,
+    recordingName,
+    state: finalState,
+    wram: finalWram,
+  } = await emulate(
+    pool,
+    info.coreType,
+    new Uint8Array(fs.readFileSync(path.resolve("data", id, info.game))),
+    ctx.state,
+    { ...info, inputAssist: InputAssist.Autoplay, inputAssistSpeed: InputAssistSpeed.Normal },
+    [],
+  );
+  fs.writeFileSync(path.resolve("data", id, "state.sav"), finalState);
+  const { rows: bagResultRows, scene: bagResultScene } = generateLayout(finalWram, id, 1);
+  const bagComponents = bagResultScene === Scene.OVERWORLD
+    ? [...bagResultRows, ...buildMultiplierRows(id, 1, info.multipliers, true)]
+    : bagResultRows;
+  await message.channel.send({
+    content: (player.nickname || player.displayName) + ": Used " + itemName(itemId),
+    files: [{ attachment: recording, name: recordingName }],
+    components: bagComponents as any,
+  });
+}
+
+export async function handleOverworldBagDirectUse(
+  pool: Piscina,
+  id: string,
+  info: GameInfo,
+  player: { nickname?: string; displayName: string },
+  message: Message,
+  itemId: number,
+): Promise<void> {
+  await message.channel.sendTyping();
+
+  let ctx = await openOverworldBag(pool, id, info);
+  ctx = await navigateBagPocket(pool, ctx, 4);
+  ctx = await navigateBagItem(pool, ctx, 4, itemId);
+
+  // Select item -> USE/CANCEL submenu, then choose USE.
+  ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
+  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 60 });
+  ctx = await emulateParallel(pool, ctx, { input: { A: true }, duration: 4 });
+  ctx = await emulateParallel(pool, ctx, { input: {}, duration: 120 });
 
   fs.writeFileSync(path.resolve("data", id, "state.sav"), ctx.state);
   const {

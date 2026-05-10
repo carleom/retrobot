@@ -88,7 +88,7 @@ import { emulateParallel } from "./workerInterface";
 import { searchSpecies, getDexEntry, getDexMoves } from "./dex";
 import { Frame } from "./worker";
 import { handleBattleItem } from "./handlers/battleItem";
-import { handleOverworldBagUse } from "./handlers/overworldBag";
+import { handleOverworldBagDirectUse, handleOverworldBagUse } from "./handlers/overworldBag";
 import { buildMultiplierRows, multiplierButton } from "./handlers/components";
 import { readCurrentState } from "./handlers/readCurrentState";
 import {
@@ -730,6 +730,12 @@ const main = async () => {
                     const tgtRows = buildOverworldBagTarget(tgtWram, id, itemId);
                     await message.edit({ components: tgtRows as any });
                     await interaction.update({});
+                    return;
+                  }
+
+                  // Overworld bag: directly use a key item like Bike or Itemfinder
+                  if (parts[1] === "macro" && parts[2] === "bag" && parts[3] === "direct") {
+                    handleOverworldBagDirectUse(pool, id, info, player, message, parseInt(parts[4]));
                     return;
                   }
 

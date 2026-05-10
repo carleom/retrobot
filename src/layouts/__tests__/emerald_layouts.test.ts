@@ -654,6 +654,14 @@ test("overworld bag shows healing items with quantities", () => {
     ids.includes(`${GAME_ID}-macro-bag-item-22`),
     "should have Super Potion (22) button",
   );
+  assert(
+    ids.includes(`${GAME_ID}-macro-bag-direct-272`),
+    "should have default bike direct-use button",
+  );
+  assert(
+    ids.includes(`${GAME_ID}-macro-bag-direct-261`),
+    "should have Itemfinder direct-use button",
+  );
   // Should have a Back button
   assert(
     ids.some((id) => id.includes("-b-1")),
@@ -668,8 +676,8 @@ test("overworld bag disables items with 0 quantity", () => {
   const rows = buildOverworldBag(wram, GAME_ID);
   const disabled = getAllDisabled(rows);
 
-  // First 5 buttons are the heal items, all should be disabled
-  const itemDisabled = disabled.slice(0, 5);
+  // First 7 buttons are heal/direct-use items, all should be disabled.
+  const itemDisabled = disabled.slice(0, 7);
   assert(
     itemDisabled.every((d) => d === true),
     "all item buttons should be disabled when qty=0",
