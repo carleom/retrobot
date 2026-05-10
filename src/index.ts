@@ -1018,8 +1018,8 @@ const main = async () => {
                     };
                     // Check if party screen is already open (faint replacement)
                     const alreadyOnParty =
-                      ctxWram[0x02023064 - 0x02000000] === 0x08 ||
-                      ctxWram[0x02023064 + 2 * 0x200 - 0x02000000] === 0x08; // CONTROLLER_CHOOSEPOKEMON
+                      ctxWram[0x02023064 - 0x02000000] === 0x16 ||
+                      ctxWram[0x02023064 + 2 * 0x200 - 0x02000000] === 0x16; // CONTROLLER_CHOOSEPOKEMON
                     let navRes: MacroContext;
                     if (alreadyOnParty) {
                       // Party screen already open — skip navigation, start from current state
@@ -1103,6 +1103,17 @@ const main = async () => {
                       input: {},
                       duration: 30,
                     });
+                    if (alreadyOnParty) {
+                      // Shift-style replacement opens one extra confirmation after selecting the party member.
+                      navRes = await emulateParallel(pool, navRes, {
+                        input: { A: true },
+                        duration: 4,
+                      });
+                      navRes = await emulateParallel(pool, navRes, {
+                        input: {},
+                        duration: 30,
+                      });
+                    }
                     fs.writeFileSync(
                       path.resolve("data", id, "state.sav"),
                       navRes.state,
