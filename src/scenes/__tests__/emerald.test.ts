@@ -179,7 +179,7 @@ test("BEFORE_ACTION_CHOSEN + YESNOBOX → BATTLE_YESNO", () => {
     ADDR.gBattleCommunication,
     BattleCommState.STATE_BEFORE_ACTION_CHOSEN,
   );
-  writeU8(wram, 0x02023064, 0x05); // CONTROLLER_YESNOBOX in gBattleBufferA[0][0]
+  writeU8(wram, 0x02023064, 0x13); // CONTROLLER_YESNOBOX in gBattleBufferA[0][0]
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
 });
 
@@ -208,7 +208,7 @@ test("CONTROLLER_CHOOSEPOKEMON → BATTLE_PKMN_SWITCH (voluntary switch, comm=1)
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
   // Party screen is open — buffer command takes priority
-  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  writeU8(wram, 0x02023064, 0x16); // CONTROLLER_CHOOSEPOKEMON
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
 });
 
@@ -223,7 +223,7 @@ test("CONTROLLER_CHOOSEPOKEMON → BATTLE_PKMN_SWITCH (faint replacement, comm=c
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
   // Party screen is open for forced replacement
-  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  writeU8(wram, 0x02023064, 0x16); // CONTROLLER_CHOOSEPOKEMON
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
 });
 
@@ -269,7 +269,7 @@ test("CHOOSEACTION buffer wins over stale chosen action", () => {
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
   writeU8(wram, ADDR.gBattleCommunication + 1, 0);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION — action menu is still visible
+  writeU8(wram, 0x02023064, 0x12); // CONTROLLER_CHOOSEACTION — action menu is still visible
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });
 
@@ -303,8 +303,8 @@ test("CHOOSEPOKEMON at battler 2 index → BATTLE_PKMN_SWITCH", () => {
   writeU8(wram, ADDR.gActiveBattler, 2);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CONFIRMED);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  // gBattleBufferA[2][0] = 0x08 (stride 0x200, so +0x400 from base)
-  writeU8(wram, 0x02023064 + 2 * 0x200, 0x08); // CONTROLLER_CHOOSEPOKEMON at battler 2
+  // gBattleBufferA[2][0] = 0x16 (stride 0x200, so +0x400 from base)
+  writeU8(wram, 0x02023064 + 2 * 0x200, 0x16); // CONTROLLER_CHOOSEPOKEMON at battler 2
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_PKMN_SWITCH);
 });
 
@@ -314,7 +314,7 @@ test("YESNOBOX at battler 1 index → BATTLE_YESNO", () => {
   writeU8(wram, ADDR.gActiveBattler, 1);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
-  writeU8(wram, 0x02023064 + 1 * 0x200, 0x05); // CONTROLLER_YESNOBOX at battler 1
+  writeU8(wram, 0x02023064 + 1 * 0x200, 0x13); // CONTROLLER_YESNOBOX at battler 1
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_YESNO);
 });
 
@@ -344,7 +344,7 @@ test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
-test("single battle target return controller → BATTLE_MOVE_TARGET", () => {
+test("CHOOSEMOVE controller → BATTLE_MOVE_SELECT", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
@@ -355,11 +355,11 @@ test("single battle target return controller → BATTLE_MOVE_TARGET", () => {
     BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_TWORETURNVALUES during target selection
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_CHOOSEMOVE
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
-test("single battle target return controller during standby → BATTLE_MOVE_TARGET", () => {
+test("CHOOSEMOVE controller during standby → BATTLE_MOVE_SELECT", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
@@ -370,11 +370,11 @@ test("single battle target return controller during standby → BATTLE_MOVE_TARG
     BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x14); // Real target fixtures can settle at comm=3.
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_CHOOSEMOVE
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
-test("stale move action with healthbar controller after target cancel → BATTLE_FIGHT", () => {
+test("OPENBAG controller → BATTLE_BAG_POCKET", () => {
   const wram = createWram();
   setupBattleState(wram);
   writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
@@ -384,9 +384,9 @@ test("stale move action with healthbar controller after target cancel → BATTLE
     ADDR.gBattleCommunication,
     BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
   );
-  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x12); // CONTROLLER_HEALTHBARUPDATE stale on action menu.
-  assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_ITEM);
+  writeU8(wram, 0x02023064, 0x15); // CONTROLLER_OPENBAG
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_BAG_POCKET);
 });
 
 test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
@@ -397,7 +397,7 @@ test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
   writeU8(wram, ADDR.gActiveBattler, 0);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x06); // CONTROLLER_CHOOSEMOVE
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_CHOOSEMOVE
 
   const targetSpriteId = 7;
   writeU8(wram, ADDR.gBattlerSpriteIds + 1, targetSpriteId);
@@ -419,7 +419,7 @@ test("double battle CHOOSEMOVE without target sprite → BATTLE_MOVE_SELECT", ()
   writeU8(wram, ADDR.gActiveBattler, 0);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_WAIT_ACTION_CHOSEN);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
-  writeU8(wram, 0x02023064, 0x06); // CONTROLLER_CHOOSEMOVE
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_CHOOSEMOVE
 
   assert(!detector.hasMoveTargetCursor(wram), "should not detect target cursor");
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
@@ -435,7 +435,7 @@ test("double battle CHOOSEACTION at player battler 2 → BATTLE_FIGHT", () => {
   writeU8(wram, ADDR.gBattleCommunication + 2, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
   writeU8(wram, ADDR.gChosenActionByBattler + 2, ChosenAction.B_ACTION_NONE);
-  writeU8(wram, 0x02023064 + 2 * 0x200, 0x04); // CONTROLLER_CHOOSEACTION
+  writeU8(wram, 0x02023064 + 2 * 0x200, 0x12); // CONTROLLER_CHOOSEACTION
 
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_FIGHT);
 });

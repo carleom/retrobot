@@ -39,17 +39,15 @@ const ADDR = {
 } as const;
 
 /** Battle controller command: choose FIGHT / BAG / PKMN / RUN. */
-const CONTROLLER_CHOOSEACTION = 0x04;
+const CONTROLLER_CHOOSEACTION = 0x12;
 /** Battle controller command: Yes/No box (switch prompt, learn move, etc.). */
-const CONTROLLER_YESNOBOX = 0x05;
+const CONTROLLER_YESNOBOX = 0x13;
 /** Battle controller command: choose a move. */
-const CONTROLLER_CHOOSEMOVE = 0x06;
+const CONTROLLER_CHOOSEMOVE = 0x14;
+/** Battle controller command: open battle bag. */
+const CONTROLLER_OPENBAG = 0x15;
 /** Battle controller command: Choose a Pokémon (voluntary switch or faint replacement). */
-const CONTROLLER_CHOOSEPOKEMON = 0x08;
-/** Stale controller command commonly left after returning to the action menu. */
-const CONTROLLER_HEALTHBARUPDATE = 0x12;
-/** Battle controller command used while returning a selected move target. */
-const CONTROLLER_TWORETURNVALUES = 0x14;
+const CONTROLLER_CHOOSEPOKEMON = 0x16;
 
 const MAX_BATTLERS_COUNT = 4;
 const MAX_SPRITES = 128;
@@ -116,28 +114,23 @@ export class EmeraldSceneDetector implements SceneDetector {
     if (bufferCmd === CONTROLLER_YESNOBOX) {
       return Scene.BATTLE_YESNO;
     }
-    if (bufferCmd === CONTROLLER_CHOOSEPOKEMON) {
-      return Scene.BATTLE_PKMN_SWITCH;
-    }
-    if (bufferCmdPlayer === CONTROLLER_TWORETURNVALUES
-        && commState >= BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN
-        && commState <= BattleCommState.STATE_WAIT_ACTION_CONFIRMED) {
+    if (this.isDoubleBattle(wram) && this.hasMoveTargetCursor(wram)) {
       return Scene.BATTLE_MOVE_TARGET;
     }
-    if (bufferCmdPlayer === CONTROLLER_HEALTHBARUPDATE
-        && activeBattler !== playerBattler
-        && commState === BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN) {
-      return Scene.BATTLE_FIGHT;
+    if (bufferCmdPlayer === CONTROLLER_CHOOSEMOVE) {
+      return Scene.BATTLE_MOVE_SELECT;
+    }
+    if (bufferCmdPlayer === CONTROLLER_OPENBAG) {
+      return Scene.BATTLE_BAG_POCKET;
+    }
+    if (bufferCmd === CONTROLLER_CHOOSEPOKEMON || bufferCmdPlayer === CONTROLLER_CHOOSEPOKEMON) {
+      return Scene.BATTLE_PKMN_SWITCH;
     }
 
     // In double battles, target selection is represented by the move controller
     // changing a battler sprite callback to SpriteCB_ShowAsMoveTarget. This is
     // EWRAM-visible and disambiguates comm=2 without internal bot state.
     if (this.isDoubleBattle(wram)) {
-      if (this.hasMoveTargetCursor(wram)) {
-        return Scene.BATTLE_MOVE_TARGET;
-      }
-
       if (bufferCmdPlayerBattler === CONTROLLER_CHOOSEACTION) {
         return Scene.BATTLE_FIGHT;
       }
@@ -157,8 +150,8 @@ export class EmeraldSceneDetector implements SceneDetector {
         && readU8(wram, ADDR.gChosenActionByBattler) === ChosenAction.B_ACTION_USE_MOVE
         && activeBattler !== 0
         && bufferCmdPlayer !== 0
-        && bufferCmdPlayer !== 0x04 // CONTROLLER_CHOOSEACTION
-        && bufferCmdPlayer !== 0x06) { // CONTROLLER_CHOOSEMOVE
+        && bufferCmdPlayer !== CONTROLLER_CHOOSEACTION
+        && bufferCmdPlayer !== CONTROLLER_CHOOSEMOVE) {
       // gBattleCommunication[1] is used as cursor position (0=top, 1=bottom)
       const comm1 = readU8(wram, ADDR.gBattleCommunication + 1);
       if (comm1 === 0 || comm1 === 1) {

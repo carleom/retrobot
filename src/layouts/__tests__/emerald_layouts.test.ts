@@ -324,7 +324,7 @@ test("battle action menu with BAG cursor still shows fight layout", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_ITEM);
-  writeU8(wram, 0x02023064, 0x04); // CONTROLLER_CHOOSEACTION
+  writeU8(wram, 0x02023064, 0x12); // CONTROLLER_CHOOSEACTION
 
   writePartyPokemon(wram, 0, 1, [33, 45, 73, 22], [25, 40, 10, 15], 80, 80);
   writeU32(wram, ADDR.encryptionKey, 0);
@@ -507,7 +507,7 @@ test("move select layout shows move names without PP", () => {
   );
 });
 
-test("single battle move target shows confirm target instead of double slots", () => {
+test("single battle choose move controller shows move select instead of target slots", () => {
   const wram = createWram();
   setupTrainerBattle(wram);
   writeU8(wram, ADDR.gActiveBattler, 2);
@@ -516,19 +516,19 @@ test("single battle move target shows confirm target instead of double slots", (
     ADDR.gBattleCommunication,
     BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY,
   );
-  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_TWORETURNVALUES target prompt
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_CHOOSEMOVE
   writeU8(wram, ADDR.gBattlerPositions, 0);
   writeU8(wram, ADDR.gBattlerPositions + 1, 1);
   writeU16(wram, ADDR.gBattleMons + BATTLEMON_SIZE, 81); // MAGNEMITE
   writeU16(wram, ADDR.gBattleMons + BATTLEMON_SIZE + 0x28, 34);
+  writePartyPokemon(wram, 0, 304, [232, 334, 189, 29], [15, 15, 1, 8], 38, 52);
 
   const result = generateLayout(wram, GAME_ID);
   const labels = getAllLabels(result.rows);
-  const ids = getAllCustomIds(result.rows);
 
-  assert(result.scene === Scene.BATTLE_MOVE_TARGET, "should be target scene");
-  assert(labels.some((l) => l.includes("Target MAGNEMITE")), "should show target confirm label");
-  assert(ids.includes(`${GAME_ID}-macro-target-confirm`), "should confirm default target");
+  assert(result.scene === Scene.BATTLE_MOVE_SELECT, "should be move select scene");
+  assert(labels.some((l) => l.includes("METAL CLAW")), "should show move buttons");
+  assert(!labels.some((l) => l.includes("MAGNEMITE")), "should not show target button");
   assert(!labels.includes("—"), "should not show double-battle placeholder target");
 });
 
@@ -543,7 +543,7 @@ test("pokemon switch layout shows party with HP", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
-  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  writeU8(wram, 0x02023064, 0x16); // CONTROLLER_CHOOSEPOKEMON
 
   // Party: Bulbasaur (active, 80/80), Charmander (4, 120/120), empty, Pidgey fainted, ...
   writePartyPokemon(wram, 0, 1, [33, 45, 0, 0], [25, 40, 0, 0], 80, 80); // BULBASAUR
@@ -590,7 +590,7 @@ test("fainted Pokemon are disabled in switch layout", () => {
     BattleCommState.STATE_WAIT_ACTION_CHOSEN,
   );
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_SWITCH);
-  writeU8(wram, 0x02023064, 0x08); // CONTROLLER_CHOOSEPOKEMON
+  writeU8(wram, 0x02023064, 0x16); // CONTROLLER_CHOOSEPOKEMON
 
   writePartyPokemon(wram, 0, 1, [33, 0, 0, 0], [25, 0, 0, 0], 0, 80); // fainted (hp=0)
   writeU32(wram, ADDR.encryptionKey, 0);
@@ -766,7 +766,7 @@ test("Yes/No layout has Yes, No, and Manual buttons", () => {
   writeU8(wram, ADDR.gActiveBattler, 0);
   writeU8(wram, ADDR.gBattleCommunication, BattleCommState.STATE_BEFORE_ACTION_CHOSEN);
   writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_NONE);
-  writeU8(wram, 0x02023064, 0x05); // CONTROLLER_YESNOBOX
+  writeU8(wram, 0x02023064, 0x13); // CONTROLLER_YESNOBOX
 
   const result = generateLayout(wram, GAME_ID);
   assert(result.scene === Scene.BATTLE_YESNO, "should be yesno scene");
