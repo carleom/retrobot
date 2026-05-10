@@ -344,6 +344,36 @@ test("STATE_WAIT_ACTION_CASE_CHOSEN + USE_MOVE → BATTLE_MOVE_SELECT", () => {
   assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_SELECT);
 });
 
+test("single battle target return controller → BATTLE_MOVE_TARGET", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CASE_CHOSEN,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x14); // CONTROLLER_TWORETURNVALUES during target selection
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+});
+
+test("single battle target return controller during standby → BATTLE_MOVE_TARGET", () => {
+  const wram = createWram();
+  setupBattleState(wram);
+  writeU32(wram, ADDR.gBattleTypeFlags, 4 | BattleTypeFlag.BATTLE_TYPE_TRAINER);
+  writeU8(wram, ADDR.gActiveBattler, 2);
+  writeU8(
+    wram,
+    ADDR.gBattleCommunication,
+    BattleCommState.STATE_WAIT_ACTION_CONFIRMED_STANDBY,
+  );
+  writeU8(wram, ADDR.gChosenActionByBattler, ChosenAction.B_ACTION_USE_MOVE);
+  writeU8(wram, 0x02023064, 0x14); // Real target fixtures can settle at comm=3.
+  assertSceneEquals(detector.detect(wram), Scene.BATTLE_MOVE_TARGET);
+});
+
 test("double battle move target sprite callback → BATTLE_MOVE_TARGET", () => {
   const wram = createWram();
   setupBattleState(wram);
